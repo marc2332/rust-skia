@@ -59,42 +59,18 @@ pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
             "gl,textlayout".into(),
         ]
     } else {
-        [
-            "",
-            "gl",
-            "vulkan",
-            "textlayout",
-            "gl,textlayout",
-            "vulkan,textlayout",
-            "gl,vulkan,textlayout",
-        ]
-        .iter()
-        .map(|s| (*s).into())
-        .collect()
+        vec![]
     };
 
     match workflow.host_os {
         HostOS::Windows | HostOS::WindowsArm => {
-            features.extend_from_slice(&[
-                "d3d".into(),
-                "d3d,textlayout".into(),
-                "d3d,gl,textlayout".into(),
-            ]);
+           
         }
         HostOS::Linux => {
-            features.extend_from_slice(&[
-                "gl,x11".into(),
-                "gl,textlayout,x11".into(),
-                // Full feature set: See skia-safe/Cargo.toml all-linux
-                "gl,egl,x11,wayland,vulkan,textlayout,svg,skottie,webp".into(),
-            ]);
+            
         }
         HostOS::MacOS => {
-            features.extend_from_slice(&[
-                "metal".into(),
-                "metal,textlayout".into(),
-                "metal,gl,textlayout".into(),
-            ]);
+            
         }
         HostOS::Wasm => {
             // WASM-specific features added via grida_canvas_release_features
@@ -131,9 +107,9 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
         }
         HostOS::Linux => {
             vec![
-                "gl,textlayout,svg,x11".into(),
                 // <https://github.com/rust-skia/rust-skia/issues/737>
                 "gl,textlayout,svg,wayland,x11".into(),
+                "gl,textlayout,svg,wayland,x11,vulkan".into(),
             ]
         }
     }
