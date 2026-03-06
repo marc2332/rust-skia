@@ -1,9 +1,9 @@
 [package]
 
-name = "skia-bindings"
+name = "freya-skia-bindings"
 description = "Skia Bindings for Rust"
-homepage = "https://github.com/rust-skia/rust-skia/tree/master/skia-bindings"
-repository = "https://github.com/rust-skia/rust-skia"
+homepage = "https://github.com/marc2332/rust-skia/tree/master/skia-bindings"
+repository = "https://github.com/marc2332/rust-skia"
 readme = "README.md"
 keywords = ["skia", "rust-bindings", "vulkan", "opengl", "pdf"]
 categories = ["external-ffi-bindings", "graphics", "multimedia::images", "rendering::graphics-api", "visualization"]
@@ -26,6 +26,7 @@ include = [
 	"src/*.rs" ]
 
 [lib]
+name = "skia_bindings"
 doctest = false
 
 # Metadata used from inside the packaged crate that defines where to download the Skia archive from.
@@ -57,7 +58,7 @@ embed-icudtl = []
 embed-freetype = []
 freetype-woff2 = []
 # Panic when any compilation steps are required to run. 
-# See <https://github.com/rust-skia/rust-skia/pull/1121>.
+# See <https://github.com/marc2332/rust-skia/pull/1121>.
 no-compile = []
 
 jpeg = ["jpeg-encode", "jpeg-decode"]

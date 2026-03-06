@@ -1,17 +1,18 @@
 [package]
-name = "skia-svg-macros"
+name = "freya-skia-svg-macros"
 
 description = "Skia SVG Macros for Dom bindings"
 version = "0.1.0"
 edition = "2021"
 rust-version.workspace = true
 
-homepage = "https://github.com/rust-skia/rust-skia"
-repository = "https://github.com/rust-skia/rust-skia"
+homepage = "https://github.com/marc2332/rust-skia"
+repository = "https://github.com/marc2332/rust-skia"
 documentation = "https://rust-skia.github.io/doc/skia_safe"
 license = "MIT"
 
 [lib]
+name = "skia_svg_macros"
 proc-macro = true
 
 [dependencies]

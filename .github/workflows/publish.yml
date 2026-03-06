@@ -20,9 +20,6 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Apply freya patches
-        run: bash apply-freya-patches.sh
-
       # Publish in dependency order.
       # --no-verify skips a local build (building skia from source in CI is
       # unnecessary just for publishing the source package to crates.io).

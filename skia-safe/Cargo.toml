@@ -1,9 +1,9 @@
 [package]
-name = "skia-safe"
+name = "freya-skia-safe"
 
 description = "Safe Skia Bindings for Rust"
-homepage = "https://github.com/rust-skia/rust-skia"
-repository = "https://github.com/rust-skia/rust-skia"
+homepage = "https://github.com/marc2332/rust-skia"
+repository = "https://github.com/marc2332/rust-skia"
 documentation = "https://rust-skia.github.io/doc/skia_safe"
 readme = "README.md"
 # 5 max
@@ -24,6 +24,7 @@ edition = "2021"
 rust-version.workspace = true
 
 [lib]
+name = "skia_safe"
 doctest = false
 
 [features]
@@ -60,7 +61,7 @@ gpu = []
 
 [dependencies]
 bitflags = "2.0"
-skia-bindings = { version = "=0.93.1", path = "../skia-bindings", default-features = false }
+skia-bindings = { package = "freya-skia-bindings", version = "=0.93.1", path = "../skia-bindings", default-features = false }
 
 
 # D3D types & ComPtr
@@ -78,7 +79,7 @@ windows = { version = "0.62.0", features = [
 ureq = { version = "3.0.4", optional = true }
 base64 = { version = "0.22.0", optional = true }
 percent-encoding = { version = "2.3.1", optional = true }
-skia-svg-macros = { version = "0.1.0", path = "../skia-svg-macros", optional = true }
+skia-svg-macros = { package = "freya-skia-svg-macros", version = "0.1.0", path = "../skia-svg-macros", optional = true }
 
 [dev-dependencies]
 
