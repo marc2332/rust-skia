@@ -63,15 +63,9 @@ pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
     };
 
     match workflow.host_os {
-        HostOS::Windows | HostOS::WindowsArm => {
-           
-        }
-        HostOS::Linux => {
-            
-        }
-        HostOS::MacOS => {
-            
-        }
+        HostOS::Windows | HostOS::WindowsArm => {}
+        HostOS::Linux => {}
+        HostOS::MacOS => {}
         HostOS::Wasm => {
             // WASM-specific features added via grida_canvas_release_features
         }
