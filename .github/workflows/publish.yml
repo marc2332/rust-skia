@@ -26,11 +26,6 @@ jobs:
       # Sleeps between steps let the crates.io index catch up so dependents
       # can resolve the newly published versions.
 
-      - name: Publish freya-skia-svg-macros
-        run: cargo publish --manifest-path skia-svg-macros/Cargo.toml --no-verify
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
       - name: Wait for crates.io index
         run: sleep 30
 
