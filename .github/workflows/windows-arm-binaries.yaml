@@ -2,6 +2,7 @@
 
 name: 'windows-arm-binaries'
 on:
+  workflow_dispatch:
   push:
     branches:
       - release

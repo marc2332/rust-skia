@@ -2,6 +2,7 @@
 
 name: 'wasm-binaries'
 on:
+  workflow_dispatch:
   push:
     branches:
       - release
