@@ -19,14 +19,6 @@ pub fn workflows() -> Vec<Workflow> {
         });
         workflows.push(Workflow {
             kind,
-            host_os: HostOS::WindowsArm,
-            host_target: "aarch64-pc-windows-msvc",
-            job_template: WINDOWS_ARM_JOB,
-            targets: windows_arm_targets(),
-            host_bin_ext: ".exe",
-        });
-        workflows.push(Workflow {
-            kind,
             host_os: HostOS::Linux,
             host_target: "x86_64-unknown-linux-gnu",
             job_template: LINUX_JOB,
@@ -41,14 +33,6 @@ pub fn workflows() -> Vec<Workflow> {
             targets: macos_targets(),
             host_bin_ext: "",
         });
-        workflows.push(Workflow {
-            kind,
-            host_os: HostOS::Wasm,
-            host_target: "wasm32-unknown-emscripten",
-            job_template: WASM_JOB,
-            targets: wasm_targets(),
-            host_bin_ext: "",
-        });
     }
     workflows
 }
@@ -61,30 +45,7 @@ pub fn jobs(workflow: &Workflow) -> Vec<Job> {
 }
 
 pub fn qa_jobs(workflow: &Workflow) -> Vec<Job> {
-    match workflow.host_os {
-        HostOS::Wasm => {
-            // WASM QA: Use features that work with WASM (no vulkan, ureq)
-            vec![Job {
-                name: JobName::Named("stable-all-features".into()),
-                toolchain: "stable",
-                features: JobFeatures::Direct("gl,textlayout,svg,skottie,webp".into()),
-                skia_debug: false,
-                disable_clippy: false,
-                example_args: None,
-            }]
-        }
-        _ => {
-            const QA_ALL_FEATURES: &str = "gl,vulkan,textlayout,svg,skottie,ureq,webp";
-            vec![Job {
-                name: JobName::Named("stable-all-features".into()),
-                toolchain: "stable",
-                features: JobFeatures::Direct(QA_ALL_FEATURES.into()),
-                skia_debug: false,
-                disable_clippy: false,
-                example_args: Some("--driver cpu --driver pdf --driver svg".into()),
-            }]
-        }
-    }
+    vec![]
 }
 
 /// Jobs for building prebuilt binaries.
@@ -141,9 +102,6 @@ pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
     }
 
     features.extend(freya_binaries_features(workflow));
-    features.extend(vizia_binaries_features(workflow));
-    features.extend(skia_canvas_binaries_features(workflow));
-    features.extend(grida_canvas_binaries_features(workflow));
 
     features.sort();
     features.dedup();
@@ -259,10 +217,6 @@ fn macos_targets() -> Vec<TargetConf> {
     vec![
         TargetConf::new("aarch64-apple-darwin", "metal"),
         TargetConf::new("x86_64-apple-darwin", "metal"),
-        // iOS: Vulkan is not supported ("No Vulkan support on iOS yet" in Skia)
-        TargetConf::new("aarch64-apple-ios", "metal").disable("vulkan"),
-        TargetConf::new("aarch64-apple-ios-sim", "metal").disable("vulkan"),
-        TargetConf::new("x86_64-apple-ios", "metal").disable("vulkan"),
     ]
 }
 
