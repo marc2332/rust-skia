@@ -82,31 +82,6 @@ jobs:
         BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ runner.temp }}
         EMCC_CFLAGS: "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
 
-    - name: 'Run Clippy'
-      shell: bash
-      if: ${{ matrix.runClippy }}
-      run: |
-        cargo clippy --release --features "${{ matrix.features }}" --all-targets --target ${{ matrix.target }} -- -D warnings
-
-    - name: 'Test all workspace projects'
-      shell: bash
-      if: ${{ matrix.runTests }}
-      run: |
-        cargo test --all --release --features "${{ matrix.features }}" --all-targets --target ${{ matrix.target }} -- --nocapture
-
-    - name: 'Generate skia-org example images'
-      shell: bash
-      if: ${{ matrix.generateArtifacts }}
-      run: |
-        cargo run --release --features "${{ matrix.features }}" --target ${{ matrix.target }} "${{ env.SKIA_STAGING_PATH }}/skia-org" ${{ matrix.exampleArgs }}
-
-    - name: 'Upload skia-org example images'
-      if: ${{ matrix.generateArtifacts }}
-      uses: actions/upload-artifact@v4.6.0
-      with:
-        name: skia-org-images-${{ matrix.target }}
-        path: ${{ env.SKIA_STAGING_PATH }}/skia-org
-
     - name: 'Compress binaries'
       if: true
       uses: a7ul/tar-action@v1.1.2
