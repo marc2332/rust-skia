@@ -38,7 +38,7 @@ webp = ["skia-safe/webp"]
 svg = ["skia-safe/svg"]
 
 [dependencies]
-skia-safe = { path = "../skia-safe" }
+skia-safe = {  package = "freya-skia-safe", path = "../skia-safe" }
 
 # 0.25.1 fails to build on iOS targets on macOS: https://github.com/servo/rust-offscreen-rendering-context/pull/150 
 offscreen_gl_context = { git = "https://github.com/rust-skia/rust-offscreen-rendering-context", rev = "82b022cd0e42baaabfb82c319c9785a84a04f395", optional = true }
