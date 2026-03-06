@@ -7,6 +7,9 @@ on:
     branches:
       - release
 
+permissions:
+  contents: write
+
 concurrency:
   group: '$[[workflowName]]-${{ github.ref }}'
   cancel-in-progress: true

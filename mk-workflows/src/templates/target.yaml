@@ -41,8 +41,8 @@
   if: $[[releaseBinaries]]
   uses: pragmatrix/release-action@v1.11.1-rs
   with:
-    owner: rust-skia
-    repo: skia-binaries
+    owner: marc2332
+    repo: rust-skia
     allowUpdates: true
     replacesArtifacts: true
     tag: '${{ env.SKIA_BINARIES_TAG }}'
