@@ -94,7 +94,7 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
             vec!["gl,textlayout,svg".into()]
         }
         HostOS::MacOS => {
-            vec!["gl,textlayout,svg,metal".into()]
+            vec!["textlayout,svg,metal".into()]
         }
         HostOS::WindowsArm | HostOS::Wasm => {
             vec![]
