@@ -61,12 +61,15 @@ impl PlatformDetails for MacOs {
 fn flags() -> Vec<String> {
     let deployment_target = cargo::env_var("MACOSX_DEPLOYMENT_TARGET");
 
-    if let Some(deployment_target) = deployment_target {
-        let deployment_target = deployment_target_6(&deployment_target);
-        // Both of them are needed, so that GR_METAL_SDK_VERSION is set to the correct version.
+    if let Some(deployment_target) = &deployment_target {
+        let deployment_target_6 = deployment_target_6(deployment_target);
+        // -mmacosx-version-min tells clang the deployment target at the compiler level,
+        // which is needed for proper SDK header availability resolution (cf. iOS equivalent).
+        // The -D defines are also needed so that GR_METAL_SDK_VERSION is set to the correct version.
         return vec![
-            format!("-D__MAC_OS_X_VERSION_MIN_REQUIRED={deployment_target}"),
-            format!("-D__MAC_OS_X_VERSION_MAX_ALLOWED={deployment_target}"),
+            format!("-mmacosx-version-min={deployment_target}"),
+            format!("-D__MAC_OS_X_VERSION_MIN_REQUIRED={deployment_target_6}"),
+            format!("-D__MAC_OS_X_VERSION_MAX_ALLOWED={deployment_target_6}"),
         ];
     }
     Vec::new()
