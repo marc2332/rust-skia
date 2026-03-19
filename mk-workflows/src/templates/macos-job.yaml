@@ -1,4 +1,4 @@
-runs-on: macos-14
+runs-on: macos-15
 env:
   SKIA_DEBUG: $[[skiaDebug]]
   MACOSX_DEPLOYMENT_TARGET: '$[[macosxDeploymentTarget]]'
@@ -7,6 +7,11 @@ steps:
 - uses: actions/checkout@v3
   with:
     submodules: true
+
+- name: Use Xcode Clang
+  run: |
+    echo "CC=$(xcrun --find clang)" >> $GITHUB_ENV
+    echo "CXX=$(xcrun --find clang++)" >> $GITHUB_ENV
 
 - name: Install Rust
   uses: dtolnay/rust-toolchain@$[[rustToolchain]]

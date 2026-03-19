@@ -38,7 +38,7 @@ jobs:
             generateArtifacts: false
           - features: 'metal,svg,textlayout'
             macosxDeploymentTarget: '10.14'
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       SKIA_DEBUG: 0
       MACOSX_DEPLOYMENT_TARGET: '${{ matrix.macosxDeploymentTarget }}'
@@ -47,6 +47,11 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+
+    - name: Use Xcode Clang
+      run: |
+        echo "CC=$(xcrun --find clang)" >> $GITHUB_ENV
+        echo "CXX=$(xcrun --find clang++)" >> $GITHUB_ENV
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
