@@ -36,12 +36,10 @@ jobs:
             runTests: false
             exampleArgs: ''
             generateArtifacts: false
-          - features: 'metal,svg,textlayout'
-            macosxDeploymentTarget: '10.14'
     runs-on: macos-14
     env:
       SKIA_DEBUG: 0
-      MACOSX_DEPLOYMENT_TARGET: '${{ matrix.macosxDeploymentTarget }}'
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
 
     steps:
     - uses: actions/checkout@v3
