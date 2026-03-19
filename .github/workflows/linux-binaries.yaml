@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features: ["gl,svg,textlayout,wayland,x11", "gl,svg,textlayout,vulkan,wayland,x11"]
+        features: ["gl,svg,textlayout,vulkan,wayland,x11"]
         target: ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "aarch64-linux-android", "x86_64-linux-android", "i686-linux-android"]
         include:
           - target: x86_64-unknown-linux-gnu
@@ -58,12 +58,6 @@ jobs:
             exampleArgs: ''
             generateArtifacts: false
         exclude:
-          - target: aarch64-linux-android
-            features: 'gl,svg,textlayout,wayland,x11'
-          - target: x86_64-linux-android
-            features: 'gl,svg,textlayout,wayland,x11'
-          - target: i686-linux-android
-            features: 'gl,svg,textlayout,wayland,x11'
           - target: aarch64-linux-android
             features: 'gl,svg,textlayout,vulkan,wayland,x11'
           - target: x86_64-linux-android
