@@ -91,7 +91,7 @@ pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
 fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
     match workflow.host_os {
         HostOS::Windows => {
-            vec!["gl,textlayout,svg".into()]
+            vec!["gl,vulkan,textlayout,svg".into()]
         }
         HostOS::MacOS => {
             vec!["textlayout,svg,metal".into()]
@@ -102,8 +102,7 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
         HostOS::Linux => {
             vec![
                 // <https://github.com/rust-skia/rust-skia/issues/737>
-                "gl,textlayout,svg,wayland,x11".into(),
-                "gl,textlayout,svg,wayland,x11,vulkan".into(),
+                "gl,vulkan,textlayout,svg,wayland,x11".into(),
             ]
         }
     }
