@@ -27,6 +27,14 @@ pub fn workflows() -> Vec<Workflow> {
         });
         workflows.push(Workflow {
             kind,
+            host_os: HostOS::Android,
+            host_target: "x86_64-unknown-linux-gnu",
+            job_template: LINUX_JOB,
+            targets: android_targets(),
+            host_bin_ext: "",
+        });
+        workflows.push(Workflow {
+            kind,
             host_os: HostOS::MacOS,
             host_target: "aarch64-apple-darwin",
             job_template: MACOS_JOB,
@@ -64,7 +72,7 @@ pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
 
     match workflow.host_os {
         HostOS::Windows | HostOS::WindowsArm => {}
-        HostOS::Linux => {}
+        HostOS::Linux | HostOS::Android => {}
         HostOS::MacOS => {}
         HostOS::Wasm => {
             // WASM-specific features added via grida_canvas_release_features
@@ -105,6 +113,9 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
                 "gl,svg,textlayout,vulkan,wayland,webp,x11".into(),
             ]
         }
+        HostOS::Android => {
+            vec!["gl,svg,textlayout,vulkan,webp".into()]
+        }
     }
 }
 
@@ -118,7 +129,7 @@ fn vizia_binaries_features(workflow: &Workflow) -> Vec<Features> {
         HostOS::Windows => {
             vec!["gl,vulkan,textlayout,svg,d3d".into()]
         }
-        HostOS::WindowsArm | HostOS::Wasm => {
+        HostOS::WindowsArm | HostOS::Wasm | HostOS::Android => {
             vec![]
         }
         HostOS::Linux => {
@@ -148,7 +159,7 @@ fn skia_canvas_binaries_features(workflow: &Workflow) -> Vec<Features> {
         HostOS::Linux => {
             vec!["vulkan,textlayout,webp,svg".into()]
         }
-        HostOS::Wasm => {
+        HostOS::Wasm | HostOS::Android => {
             vec![]
         }
     }
@@ -178,7 +189,6 @@ fn linux_targets() -> Vec<TargetConf> {
         "egl,x11,wayland",
     )];
     targets.extend(linux_aarch64_targets());
-    targets.extend(android_targets());
     targets
 }
 
@@ -199,9 +209,9 @@ fn linux_aarch64_targets() -> Vec<TargetConf> {
 
 fn android_targets() -> Vec<TargetConf> {
     [
-        TargetConf::new("aarch64-linux-android", "gl,vulkan").disable("egl,x11,wayland"),
-        TargetConf::new("x86_64-linux-android", "gl,vulkan").disable("egl,x11,wayland"),
-        TargetConf::new("i686-linux-android", "gl,vulkan").disable("egl,x11,wayland"),
+        TargetConf::new("aarch64-linux-android", ""),
+        TargetConf::new("x86_64-linux-android", ""),
+        TargetConf::new("i686-linux-android", ""),
     ]
     .into()
 }

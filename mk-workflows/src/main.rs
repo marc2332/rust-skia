@@ -64,6 +64,7 @@ enum HostOS {
     Windows,
     WindowsArm,
     Linux,
+    Android,
     MacOS,
     Wasm,
 }
@@ -75,6 +76,7 @@ impl fmt::Display for HostOS {
             Windows => "windows",
             WindowsArm => "windows-arm",
             Linux => "linux",
+            Android => "android",
             MacOS => "macos",
             Wasm => "wasm",
         })
