@@ -199,9 +199,9 @@ fn linux_aarch64_targets() -> Vec<TargetConf> {
 
 fn android_targets() -> Vec<TargetConf> {
     [
-        TargetConf::new("aarch64-linux-android", "").disable("egl,x11,wayland"),
-        TargetConf::new("x86_64-linux-android", "").disable("egl,x11,wayland"),
-        TargetConf::new("i686-linux-android", "").disable("egl,x11,wayland"),
+        TargetConf::new("aarch64-linux-android", "gl,vulkan").disable("egl,x11,wayland"),
+        TargetConf::new("x86_64-linux-android", "gl,vulkan").disable("egl,x11,wayland"),
+        TargetConf::new("i686-linux-android", "gl,vulkan").disable("egl,x11,wayland"),
     ]
     .into()
 }
