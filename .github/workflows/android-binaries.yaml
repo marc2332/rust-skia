@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features: ["gl,svg,textlayout,vulkan,webp"]
+        features: ["gl,svg,textlayout,webp"]
         target: ["aarch64-linux-android", "x86_64-linux-android", "i686-linux-android"]
         include:
           - target: aarch64-linux-android

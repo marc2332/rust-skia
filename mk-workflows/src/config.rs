@@ -114,7 +114,7 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
             ]
         }
         HostOS::Android => {
-            vec!["gl,svg,textlayout,vulkan,webp".into()]
+            vec!["gl,svg,textlayout,webp".into()]
         }
     }
 }
