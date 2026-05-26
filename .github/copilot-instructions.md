@@ -6,11 +6,16 @@ Update it whenever you learn something new about the project's patterns, convent
 ## Project
 - Follow the existing project structure and idioms.
 - Prefer small, self-contained changes unless explicitly asked for broader refactors.
+- For targeted ports (for example, "add missing bindings"), keep diffs strictly scoped to the missing API surface.
+- Do not refactor adjacent working code unless it is required for correctness, compatibility, or explicitly requested.
 
 ## Code Style
 - Match the surrounding code style.
 - Keep functions small, clear, and deterministic.
 - Avoid unnecessary dependencies.
+- When porting/wrapping C++ APIs, keep Rust method and debug-field ordering aligned with the upstream C++ header order unless there is a project-specific convention to do otherwise.
+- Keep top-level type declarations in the same sequence as the upstream C++ header (for example, main wrapper type first when the C++ type is defined first).
+- For nested C++ types, keep the parent Rust type first and define the nested Rust types directly below the parent to preserve visual parity.
 - Do not add obvious comments that restate what the code clearly expresses.
 - Only comment to explain non-obvious reasoning or intent.
 - Limit qualification paths to at most 2 module levels (e.g., `mpsc::channel` not `tokio::sync::mpsc::channel`).
@@ -24,6 +29,7 @@ Update it whenever you learn something new about the project's patterns, convent
 - When refactoring, don't add trait implementations (Clone, Debug, Default, etc.) that weren't present in the original code.
 - If a trait can't be derived due to field constraints, investigate whether the trait is actually needed before implementing it manually.
 - Keep reduced-feature builds and tests working: code and tests that rely on optional components should be gated or provide safe fallbacks when those components are disabled.
+- Before considering a port complete, verify C++↔Rust ordering parity for top-level types, nested types, methods, and debug fields.
 
 ## Communication
 - Explanations should be concise and strictly relevant.
@@ -44,6 +50,9 @@ Update it whenever you learn something new about the project's patterns, convent
 - Use `[`Self::method()`]` instead of `[`method(&self)`]` for intra-doc links to methods.
 - Escape array indexing in comments (e.g., `` `pts[0]` ``) to avoid them being interpreted as links.
 - Use fully qualified paths (e.g., `[`crate::Canvas`]`) if the type is not in the immediate scope.
+
+## Release Notes
+- Follow `.github/release-notes-guidelines.md` for release-note structure, wording, and attribution rules.
 
 ## Deprecation
 - Use `since = "0.0.0"` for deprecated items unless a specific version is more appropriate.

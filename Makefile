@@ -46,15 +46,20 @@ crate-post-release-test:
 #   .cargo/credentials
 
 .PHONY: publish
-publish: package-bindings package-safe publish-bindings wait publish-safe
+publish: package-bindings package-safe publish-bindings-docs wait publish-safe
 
 .PHONY: publish-only
-publish-only: publish-bindings publish-safe
+publish-only: publish-bindings-docs publish-safe
 
 .PHONY: publish-bindings
 publish-bindings:
 	cd skia-bindings && cargo publish -vv --no-verify
 
+# `publish-bindings-docs` is the variant that ships `bindings_docs.rs` in
+# the tarball -- without that file, `DOCS_RS=1` builds of downstream crates
+# fail at the bindings copy step (see rust-skia#720). The aggregate
+# `publish` and `publish-only` targets above always go through this target
+# so released tarballs include the documentation bindings.
 .PHONY: publish-bindings-docs
 publish-bindings-docs: bindings-docs
 	cd skia-bindings && cp /tmp/bindings.rs bindings_docs.rs
@@ -165,7 +170,7 @@ build-local-build:
 	cargo clean
 	SKIA_SOURCE_DIR=$(shell pwd)/skia-bindings/skia SKIA_BUILD_DEFINES=`cat tmp/skia-defines.txt` SKIA_LIBRARY_SEARCH_PATH=$(shell pwd)/tmp cargo build --release --no-default-features -vv --features ${local-build-features}
 
-# Diffs the rust skia commits of the current branch with what is commited to the master branch.
+# Diffs the rust skia commits of the current branch with what is committed to the master branch.
 rust-skia-logs = git log --oneline | head -n 1000 | grep rust-skia | cut -d' ' -f2-
 .PHONY: diff-skia
 diff-skia:

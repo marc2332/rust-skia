@@ -1,11 +1,11 @@
 # <img alt="" width="48" align="top" src="artwork/rust-skia-icon_512x512.png"/> Safe Rust bindings for the [Skia Graphics Library](https://skia.org/).
 
-[![crates.io](https://img.shields.io/crates/v/skia-safe)](https://crates.io/crates/skia-safe) [![license](https://img.shields.io/crates/l/skia-safe)](LICENSE) [![Windows QA](https://github.com/rust-skia/rust-skia/actions/workflows/windows-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/windows-qa.yaml) [![Linux QA](https://github.com/rust-skia/rust-skia/actions/workflows/linux-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/linux-qa.yaml) [![macOS QA](https://github.com/rust-skia/rust-skia/actions/workflows/macos-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/macos-qa.yaml)
+[![crates.io](https://img.shields.io/crates/v/skia-safe)](https://crates.io/crates/skia-safe) [![license](https://img.shields.io/crates/l/skia-safe)](LICENSE) [![docs.rs](https://docs.rs/skia-safe/badge.svg)](https://docs.rs/skia-safe) [![Windows QA](https://github.com/rust-skia/rust-skia/actions/workflows/windows-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/windows-qa.yaml) [![Linux QA](https://github.com/rust-skia/rust-skia/actions/workflows/linux-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/linux-qa.yaml) [![macOS QA](https://github.com/rust-skia/rust-skia/actions/workflows/macos-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/macos-qa.yaml)
 
-Skia Submodule Status: chrome/m145 ([upstream changes][skia-upstream], [our changes][skia-ours]).
+Skia Submodule Status: chrome/m148 ([upstream changes][skia-upstream], [our changes][skia-ours]).
 
-[skia-upstream]: https://github.com/rust-skia/skia/compare/m145-0.92.0...google:chrome/m145
-[skia-ours]: https://github.com/google/skia/compare/chrome/m145...rust-skia:m145-0.92.0
+[skia-upstream]: https://github.com/rust-skia/skia/compare/m148-0.97.0...google:chrome/m148
+[skia-ours]: https://github.com/google/skia/compare/chrome/m148...rust-skia:m148-0.97.0
 
 ## About
 
@@ -15,7 +15,7 @@ This project provides _up to date_ safe bindings that bridge idiomatic Rust with
 
 ### Documentation
 
-Because we [can't build on docs.rs](https://docs.rs/crate/skia-safe/0.34.0/builds), the `cargo doc` output for skia-safe is manually created and uploaded to [rust-skia.github.io](https://rust-skia.github.io/doc/skia_safe).
+The skia-safe API documentation is available on [docs.rs](https://docs.rs/skia-safe).
 
 We (slowly) [add more documentation](https://github.com/rust-skia/rust-skia/issues/446) by converting Skia's Doxygen comments to Rust.
 
@@ -261,6 +261,12 @@ An example application that opens a Window and renders a blue rectangle using [V
 
 ```bash
 cargo run --example vulkan-window --features "vulkan"
+```
+
+To enable Vulkan validation layer messages and debug output in this example:
+
+```bash
+cargo run --example vulkan-window --features "vulkan" -- --validate
 ```
 
 To add Vulkan support to your system, the easiest way is to install the [LunarG SDK](https://vulkan.lunarg.com/sdk/home), and enable "System Global Installation" in the installer.

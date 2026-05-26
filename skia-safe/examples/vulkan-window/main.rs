@@ -58,16 +58,16 @@ fn main() {
                 }
                 WindowEvent::Resized(_) => {
                     if let Some(renderer) = self.renderer.as_mut() {
-                        // When the window size changes, the framebuffers need to be reallocated to match
-                        // before redrawing the window contents
+                        // When the window size changes, swapchain-dependent resources need to be
+                        // recreated before redrawing the window contents.
                         renderer.invalidate_swapchain();
                         renderer.window.request_redraw();
                     }
                 }
                 WindowEvent::RedrawRequested => {
                     if let Some(renderer) = self.renderer.as_mut() {
-                        // The swapchain (which manages framebuffers and timing screen updates) needs
-                        // to be cleaned up/validated in between redraws
+                        // The swapchain (which manages presentable images and update timing) needs
+                        // to be cleaned up/validated in between redraws.
                         renderer.prepare_swapchain();
 
                         // After the draw routine completes, the contents of the canvas will be displayed
@@ -96,7 +96,15 @@ fn main() {
     }
 
     let event_loop = EventLoop::new().unwrap();
-    let mut app = App::default();
+    let validate = std::env::args().any(|arg| arg == "--validate");
+    if validate {
+        println!("Vulkan validation requested via --validate");
+    }
+
+    let mut app = App {
+        render_ctx: VulkanRenderContext::new(validate),
+        renderer: None,
+    };
 
     event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
     event_loop.run_app(&mut app).ok();

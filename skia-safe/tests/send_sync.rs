@@ -177,7 +177,7 @@ mod docs {
 }
 
 mod effects {
-    use skia_safe::{gradient, gradient_shader, image_filters, runtime_effect, RuntimeEffect};
+    use skia_safe::{gradient, image_filters, runtime_effect, RuntimeEffect};
     use static_assertions::*;
 
     assert_impl_all!(gradient::Interpolation: Send, Sync);
@@ -186,8 +186,6 @@ mod effects {
     assert_impl_all!(gradient::interpolation::HueMethod: Send, Sync);
     assert_impl_all!(gradient::Colors: Send, Sync);
     assert_impl_all!(gradient::Gradient: Send, Sync);
-
-    assert_impl_all!(gradient_shader::Interpolation: Send, Sync);
 
     assert_impl_all!(image_filters::CropRect: Send, Sync);
     assert_impl_all!(image_filters::Dither: Send, Sync);
@@ -205,6 +203,7 @@ mod gpu {
     use skia_safe::gpu::*;
     use static_assertions::*;
     assert_impl_all!(BackendFormat: Send, Sync);
+    assert_impl_all!(BackendSemaphore: Send, Sync);
     assert_impl_all!(BackendTexture: Send, Sync);
     assert_impl_all!(BackendRenderTarget: Send, Sync);
     assert_impl_all!(ContextOptions: Send, Sync);
@@ -332,6 +331,10 @@ mod textlayout {
 mod shaper {
     use skia_safe::shaper::*;
     use static_assertions::*;
+
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    assert_impl_all!(skia_safe::shapers::ct::LineBreakMode: Send, Sync);
+
     assert_impl_all!(Shaper: Send, Sync);
     assert_not_impl_any!(FontRunIterator: Send, Sync);
     assert_not_impl_any!(BiDiRunIterator: Send, Sync);
