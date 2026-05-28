@@ -12,25 +12,30 @@ jobs:
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
+    container: ghcr.io/pragmatrix/rust-skia-linux:latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Fix git dubious ownership errors when synchronizing Skia dependencies
+        run: git config --global --add safe.directory '*'
 
-      # Publish in dependency order.
-      # --no-verify skips a local build (building skia from source in CI is
-      # unnecessary just for publishing the source package to crates.io).
-      # Sleeps between steps let the crates.io index catch up so dependents
-      # can resolve the newly published versions.
+      - name: Prepare Rustup
+        run: (cd /github/home && ln -s /root/.cargo)
 
-      - name: Wait for crates.io index
-        run: sleep 30
+      - name: Update Rustup and Rust
+        run: rustup update
 
+      - name: Configure Rust Toolchain
+        run: rustup default stable
+
+      # `publish-bindings-docs` generates `bindings_docs.rs` via `make
+      # bindings-docs`, copies it into the skia-bindings crate, and then runs
+      # `cargo publish --no-verify --allow-dirty`. Without that file in the
+      # tarball, every downstream docs.rs build fails (rust-skia#720).
       - name: Publish freya-skia-bindings
-        run: cargo publish --manifest-path skia-bindings/Cargo.toml --no-verify
+        run: make publish-bindings-docs
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
@@ -38,6 +43,6 @@ jobs:
         run: sleep 30
 
       - name: Publish freya-skia-safe
-        run: cargo publish --manifest-path skia-safe/Cargo.toml --no-verify
+        run: make publish-safe
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

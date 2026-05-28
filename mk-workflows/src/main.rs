@@ -113,6 +113,9 @@ pub struct Job {
     // we may need to disable clippy for beta builds temporarily.
     disable_clippy: bool,
     example_args: Option<String>,
+    /// Extra `RUSTFLAGS` exported into the job environment. Used e.g. to ship a
+    /// `+crt-static` Windows variant alongside the default dynamic-CRT build.
+    rust_flags: &'static str,
 }
 
 impl fmt::Display for Job {
@@ -194,6 +197,7 @@ fn build_job(workflow: &Workflow, template: &str, job: &Job, targets: &[TargetCo
     let mut replacements = vec![
         ("rustToolchain".into(), job.toolchain.into()),
         ("skiaDebug".into(), skia_debug.into()),
+        ("rustFlags".into(), job.rust_flags.into()),
     ];
 
     if let Some(macosx_deployment_target) = macosx_deployment_target(workflow, job, targets) {

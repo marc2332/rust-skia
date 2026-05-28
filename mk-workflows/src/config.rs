@@ -79,19 +79,39 @@ pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
         }
     }
 
-    features.extend(freya_binaries_features(workflow));
+    let freya_features = freya_binaries_features(workflow);
+    features.extend(freya_features.clone());
 
     features.sort();
     features.dedup();
 
-    vec![Job {
+    let mut jobs = vec![Job {
         name: JobName::Binaries,
         toolchain: "stable",
         features: JobFeatures::Matrix(features),
         skia_debug: false,
         disable_clippy: false,
         example_args: None,
-    }]
+        rust_flags: "",
+    }];
+
+    // Additionally ship a `+crt-static` Windows variant of the Freya feature
+    // combo so downstream tooling that defaults to a static CRT (notably
+    // `cargo-dist` for `x86_64-pc-windows-msvc`) can resolve a prebuilt
+    // binary instead of falling back to a full Skia source build.
+    if workflow.host_os == HostOS::Windows && !freya_features.is_empty() {
+        jobs.push(Job {
+            name: JobName::Named("static".into()),
+            toolchain: "stable",
+            features: JobFeatures::Matrix(freya_features),
+            skia_debug: false,
+            disable_clippy: false,
+            example_args: None,
+            rust_flags: "-C target-feature=+crt-static",
+        });
+    }
+
+    jobs
 }
 
 /// Specific binary releases for the Freya GUI library <https://github.com/marc2332/freya>

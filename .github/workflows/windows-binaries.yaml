@@ -32,8 +32,102 @@ jobs:
     runs-on: windows-2022
     # Containers are not supported on Windows.
     # container: ghcr.io/pragmatrix/rust-skia-windows:latest
-    env: 
+    env:
       SKIA_DEBUG: 0
+      RUSTFLAGS: ''
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install Clippy
+      run: rustup component add clippy
+      shell: bash
+
+    - name: Python Version
+      run: python --version
+
+    - name: Upgrade LLVM
+      run: choco upgrade llvm
+
+    - name: Install Ninja
+      run: choco install ninja
+    - name: 'Install Rust target ${{ matrix.target }}'
+      shell: bash
+      run: |
+        rustup target add ${{ matrix.target }}
+
+    - name: 'Build skia-safe for ${{ matrix.target }} with features "${{ matrix.features }}"'
+      shell: bash
+      run: |
+        if [ "${{ matrix.androidEnv }}" == "true" ]; then
+          TARGET=${{ matrix.target }}
+          TARGET=${TARGET//-/_}
+          export CC_${TARGET}=${{ matrix.target }}26-clang.exe
+          export CXX_${TARGET}=${{ matrix.target }}26-clang++.exe
+          export AR_${TARGET}=llvm-ar
+          TARGET_UPPERCASE=`echo "${TARGET}" | tr [a-z] [A-Z]`
+          export CARGO_TARGET_${TARGET_UPPERCASE}_LINKER=${{ matrix.target }}26-clang.exe
+          echo "Set CC, CXX, and CARGO_LINKER target specific environment variables for Android"
+        fi
+        if [ "${{ matrix.emscriptenEnv }}" == "true" ]; then
+          source /emsdk/emsdk_env.sh
+        fi
+        cargo clean
+        cargo build -p freya-skia-safe --release --features "${{ matrix.features }}" --target ${{ matrix.target }}
+        echo "SKIA_BINARIES_TAG=$(cat "${BUILD_ARTIFACTSTAGINGDIRECTORY}/skia-binaries/tag.txt")" >> ${GITHUB_ENV}
+        echo "SKIA_BINARIES_KEY=$(cat "${BUILD_ARTIFACTSTAGINGDIRECTORY}/skia-binaries/key.txt")" >> ${GITHUB_ENV}
+        echo "SKIA_STAGING_PATH=${BUILD_ARTIFACTSTAGINGDIRECTORY}" >> ${GITHUB_ENV}
+      env:
+        BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ runner.temp }}
+        EMCC_CFLAGS: "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
+
+    - name: 'Compress binaries'
+      if: true
+      uses: a7ul/tar-action@v1.1.2
+      with:
+        command: c
+        cwd: '${{ env.SKIA_STAGING_PATH }}'
+        files: 'skia-binaries'
+        outPath: '${{ runner.temp }}/skia-binaries-${{ env.SKIA_BINARIES_KEY }}.tar.gz'
+
+    - name: 'Release binaries'
+      if: true
+      uses: pragmatrix/release-action@v1.11.1-rs
+      with:
+        owner: marc2332
+        repo: rust-skia
+        allowUpdates: true
+        replacesArtifacts: true
+        tag: '${{ env.SKIA_BINARIES_TAG }}'
+        artifacts: '${{ runner.temp }}/skia-binaries-${{ env.SKIA_BINARIES_KEY }}.tar.gz'
+        artifactErrorsFailBuild: true
+        token: ${{ github.token }}
+        prerelease: true
+  windows-binaries-static:
+    strategy:
+      fail-fast: false
+      matrix:
+        features: ["gl,svg,textlayout,vulkan,webp"]
+        target: ["x86_64-pc-windows-msvc"]
+        include:
+          - target: x86_64-pc-windows-msvc
+            androidEnv: false
+            emscriptenEnv: false
+            runClippy: true
+            runTests: true
+            exampleArgs: ''
+            generateArtifacts: false
+    runs-on: windows-2022
+    # Containers are not supported on Windows.
+    # container: ghcr.io/pragmatrix/rust-skia-windows:latest
+    env:
+      SKIA_DEBUG: 0
+      RUSTFLAGS: '-C target-feature=+crt-static'
 
     steps:
     - uses: actions/checkout@v3
