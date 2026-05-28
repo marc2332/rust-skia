@@ -1,10 +1,15 @@
 doc-features-win="gl,vulkan,d3d,textlayout,svg,skottie,ureq,webp"
 doc-features-mac="gl,vulkan,metal,textlayout,svg,skottie,ureq,webp"
-# `pdf` is included because this fork removed it from `skia-safe`'s default
-# features, but `skia-org` (in the workspace) uses `skia_safe::pdf`
-# unconditionally; without enabling pdf here the workspace build that
-# generates `bindings_docs.rs` fails to compile `skia-org`.
-doc-features-docs-rs="gl,textlayout,svg,skottie,ureq,webp,pdf"
+# `bindings_docs.rs` is generated once and shipped in the tarball; downstream
+# crates (e.g. freya) reuse it for their own docs.rs builds via DOCS_RS=1.
+# It must therefore be a *superset* of every feature any downstream enables,
+# otherwise their build references generated symbols that aren't present
+# (e.g. `VkComponentMapping` when freya enables `vulkan`). We generate it with
+# the full Linux feature set -- extra symbols are harmless to consumers that
+# enable fewer features. `pdf` is also included because this fork removed it
+# from `skia-safe`'s defaults while `skia-org` (in the workspace) still uses
+# `skia_safe::pdf` unconditionally.
+doc-features-docs-rs="gl,egl,vulkan,x11,wayland,textlayout,svg,skottie,ureq,webp,pdf"
 
 .PHONY: all
 all:
