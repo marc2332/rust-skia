@@ -1,6 +1,10 @@
 doc-features-win="gl,vulkan,d3d,textlayout,svg,skottie,ureq,webp"
 doc-features-mac="gl,vulkan,metal,textlayout,svg,skottie,ureq,webp"
-doc-features-docs-rs="gl,textlayout,svg,skottie,ureq,webp"
+# `pdf` is included because this fork removed it from `skia-safe`'s default
+# features, but `skia-org` (in the workspace) uses `skia_safe::pdf`
+# unconditionally; without enabling pdf here the workspace build that
+# generates `bindings_docs.rs` fails to compile `skia-org`.
+doc-features-docs-rs="gl,textlayout,svg,skottie,ureq,webp,pdf"
 
 .PHONY: all
 all:
