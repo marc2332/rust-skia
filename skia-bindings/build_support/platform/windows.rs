@@ -6,7 +6,15 @@ pub struct Msvc;
 
 impl PlatformDetails for Msvc {
     fn uses_freetype(&self) -> bool {
-        false
+        true
+    }
+
+    fn filter_platform_features(
+        &self,
+        _use_system_libraries: bool,
+        features: Features,
+    ) -> Features {
+        force_embedded_freetype(features)
     }
 
     fn gn_args(&self, config: &BuildConfiguration, builder: &mut GnArgsBuilder) {
@@ -78,11 +86,19 @@ pub struct Generic;
 
 impl PlatformDetails for Generic {
     fn uses_freetype(&self) -> bool {
-        false
+        true
     }
 
     fn gn_args(&self, _config: &BuildConfiguration, builder: &mut GnArgsBuilder) {
         builder.target_os_and_default_cpu("win");
+    }
+
+    fn filter_platform_features(
+        &self,
+        _use_system_libraries: bool,
+        features: Features,
+    ) -> Features {
+        force_embedded_freetype(features)
     }
 
     fn link_libraries(&self, features: &Features) -> Vec<String> {

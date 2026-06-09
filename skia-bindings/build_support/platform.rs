@@ -41,6 +41,11 @@ pub fn uses_freetype(target: &Target) -> bool {
     details(target).uses_freetype()
 }
 
+pub fn force_embedded_freetype(mut features: Features) -> Features {
+    features.set(feature::EMBED_FREETYPE, true);
+    features
+}
+
 pub fn gn_args(config: &BuildConfiguration, mut builder: GnArgsBuilder) -> Vec<(String, String)> {
     details(&config.target).gn_args(config, &mut builder);
     builder.into_gn_args()
@@ -255,7 +260,7 @@ impl BindgenArgsBuilder {
 
 pub mod prelude {
     pub use self::{cargo::Target, skia::BuildConfiguration};
-    pub use super::{BindgenArgsBuilder, GnArgsBuilder, PlatformDetails};
+    pub use super::{force_embedded_freetype, BindgenArgsBuilder, GnArgsBuilder, PlatformDetails};
     pub use crate::build_support::{cargo, clang, features::feature, features::Features, skia};
 
     pub fn quote(s: &str) -> String {

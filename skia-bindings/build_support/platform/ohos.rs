@@ -7,7 +7,15 @@ pub struct OpenHarmony;
 /// For OpenHarmony, we recommend using API12 as the minimum API level
 impl PlatformDetails for OpenHarmony {
     fn uses_freetype(&self) -> bool {
-        false
+        true
+    }
+
+    fn filter_platform_features(
+        &self,
+        _use_system_libraries: bool,
+        features: Features,
+    ) -> Features {
+        force_embedded_freetype(features)
     }
 
     fn gn_args(&self, config: &BuildConfiguration, builder: &mut GnArgsBuilder) {
@@ -22,7 +30,6 @@ impl PlatformDetails for OpenHarmony {
         builder.arg("skia_use_fontconfig", no());
         builder.arg("skia_use_dng_sdk", no());
         builder.arg("skia_enable_tools", no());
-        builder.arg("skia_use_system_freetype2", no());
         builder.arg("skia_use_system_libwebp", no());
         builder.arg("skia_use_system_libpng", no());
 

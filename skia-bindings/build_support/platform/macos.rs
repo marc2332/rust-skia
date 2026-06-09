@@ -9,12 +9,20 @@ pub struct MacOs;
 
 impl PlatformDetails for MacOs {
     fn uses_freetype(&self) -> bool {
-        false
+        true
     }
 
     fn gn_args(&self, _config: &BuildConfiguration, builder: &mut GnArgsBuilder) {
         builder.target_os_and_default_cpu("mac");
         builder.cflags(flags());
+    }
+
+    fn filter_platform_features(
+        &self,
+        _use_system_libraries: bool,
+        features: Features,
+    ) -> Features {
+        force_embedded_freetype(features)
     }
 
     fn bindgen_args(&self, _target: &Target, builder: &mut BindgenArgsBuilder) {

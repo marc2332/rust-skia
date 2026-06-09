@@ -15,7 +15,15 @@ const MIN_IOS_VERSION_CATALYST: &str = "14";
 
 impl PlatformDetails for Ios {
     fn uses_freetype(&self) -> bool {
-        false
+        true
+    }
+
+    fn filter_platform_features(
+        &self,
+        _use_system_libraries: bool,
+        features: Features,
+    ) -> Features {
+        force_embedded_freetype(features)
     }
 
     fn gn_args(&self, config: &BuildConfiguration, builder: &mut GnArgsBuilder) {
