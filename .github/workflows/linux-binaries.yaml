@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features: ["gl,svg,textlayout,vulkan,wayland,webp,x11"]
+        features: ["svg,textlayout,webp", "gl,svg,textlayout,vulkan,wayland,webp,x11"]
         target: ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
         include:
           - target: x86_64-unknown-linux-gnu
