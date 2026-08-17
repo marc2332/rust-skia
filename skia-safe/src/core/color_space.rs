@@ -1,7 +1,7 @@
 use super::Data;
 use crate::prelude::*;
 use sb::SkNVRefCnt;
-use skia_bindings::{self as sb, skcms_TransferFunction, SkColorSpace, SkColorSpacePrimaries};
+use skia_bindings::{self as sb, SkColorSpace, SkColorSpacePrimaries, skcms_TransferFunction};
 use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -494,15 +494,17 @@ pub fn create_and_clone_colorspaces() {
 #[test]
 #[serial_test::serial]
 pub fn serialize_and_deserialize() {
-    // TODO: it seems that the deserializer deduplicates the
-    // srgb colorspace, so fix this test as soon we can create
-    // custom colorspaces again.
+    // The deserializer deduplicates the sRGB colorspace against the global
+    // cache, so `deserialized` must share the same underlying instance as
+    // `original`, even though `serialize()` produces an independent `Data` blob.
     let original = ColorSpace::new_srgb();
-    assert_eq!(2, original.native().ref_cnt());
     let serialized = original.serialize();
-    assert_eq!(1, serialized.native().ref_cnt());
     let deserialized = ColorSpace::deserialize(serialized);
-    assert_eq!(3, deserialized.native().ref_cnt());
 
+    // deserialize() deduplicates back to the cached sRGB instance.
+    assert!(std::ptr::eq(
+        original.native() as *const _,
+        deserialized.native() as *const _,
+    ));
     assert!(original == deserialized);
 }

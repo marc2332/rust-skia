@@ -117,10 +117,15 @@ impl FinalBuildConfiguration {
 
         let gn_args = {
             builder
+                // Force non-standalone defaults to avoid building standalone test utilities in debug.
+                .arg("is_skia_standalone", no())
                 .arg("is_official_build", yes_if(!build.skia_debug))
+                // Since m151:
+                .arg("skia_use_partition_alloc", no())
                 .arg("is_debug", yes_if(build.skia_debug))
                 .arg("skia_enable_svg", yes_if(features[feature::SVG]))
                 .arg("skia_enable_ganesh", yes_if(features.gpu()))
+                .arg("skia_enable_graphite", yes_if(features.graphite()))
                 .arg("skia_enable_skottie", yes_if(features[feature::SKOTTIE]))
                 .arg("skia_enable_pdf", yes_if(features[feature::PDF]))
                 .arg("skia_use_gl", yes_if(features[feature::GL]))
@@ -329,7 +334,7 @@ pub fn configure_skia(
         .map(|p| p.to_owned())
         .unwrap_or_else(|| build.skia_source_dir.join("bin").join("gn"));
 
-    println!("Skia args: {}", &gn_args);
+    println!("Skia args: {gn_args}");
 
     let output = Command::new(gn_command)
         .args([
@@ -388,7 +393,9 @@ mod prerequisites {
             }
         }
 
-        panic!(">>>>> Probing for Python 3 failed, please make sure that it's available in PATH, probed executables are: {PYTHON_CMDS:?} <<<<<");
+        panic!(
+            ">>>>> Probing for Python 3 failed, please make sure that it's available in PATH, probed executables are: {PYTHON_CMDS:?} <<<<<"
+        );
     }
 
     /// Returns `true` if the given python executable identifies itself as a python version 3

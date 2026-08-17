@@ -10,10 +10,10 @@ pub mod vk;
 
 // Ganesh re-exports (these will probably be conflict with future graphite types)
 pub use ganesh::{
-    context_options::ContextOptions, images, BackendAPI, BackendFormat, BackendRenderTarget,
-    BackendSemaphore, BackendTexture, DirectContext, DirectContextId, DriverBugWorkarounds,
-    FlushInfo, PurgeResourceOptions, RecordingContext, SemaphoresSubmitted, SubmitInfo,
-    SurfaceOrigin, SyncCpu, YUVABackendTextureInfo, YUVABackendTextures,
+    BackendAPI, BackendFormat, BackendRenderTarget, BackendSemaphore, BackendTexture,
+    DirectContext, DirectContextId, DriverBugWorkarounds, FlushInfo, PurgeResourceOptions,
+    RecordingContext, SemaphoresSubmitted, SubmitInfo, SurfaceOrigin, SyncCpu,
+    YUVABackendTextureInfo, YUVABackendTextures, context_options::ContextOptions, images,
 };
 
 pub use mutable_texture_state::*;
@@ -21,7 +21,7 @@ pub use types::*;
 
 #[cfg(feature = "metal")]
 pub mod mtl {
-    pub use super::ganesh::mtl::{types::*, BackendContext};
+    pub use super::ganesh::mtl::{BackendContext, types::*};
 }
 
 pub mod surfaces {
@@ -66,6 +66,8 @@ pub mod backend_render_targets {
 pub mod backend_semaphores {
     #[cfg(feature = "d3d")]
     pub use super::ganesh::d3d::backend_semaphores::*;
+    #[cfg(feature = "vulkan")]
+    pub use super::ganesh::vk::backend_semaphores::*;
 }
 
 pub mod direct_contexts {

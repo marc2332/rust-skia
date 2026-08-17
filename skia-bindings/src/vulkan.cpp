@@ -1,7 +1,9 @@
 #include "include/gpu/MutableTextureState.h"
 #include "include/gpu/ganesh/vk/GrBackendDrawableInfo.h"
+#include "include/gpu/ganesh/GrBackendSemaphore.h"
 #include "include/gpu/ganesh/GrBackendSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
+#include "include/gpu/ganesh/vk/GrVkBackendSemaphore.h"
 #include "include/gpu/ganesh/vk/GrVkBackendSurface.h"
 #include "include/gpu/ganesh/vk/GrVkDirectContext.h"
 #include "include/gpu/ganesh/vk/GrVkTypes.h"
@@ -78,6 +80,8 @@ extern "C" void *C_VulkanBackendContext_new(
     void *device,
     void *queue,
     uint32_t graphicsQueueIndex,
+    GrProtected protectedContext,
+    uint32_t maxAPIVersion,
 
     /* PFN_vkVoidFunction makes us trouble on the Rust side */
     GetProcFnVoidPtr getProc,
@@ -99,6 +103,8 @@ extern "C" void *C_VulkanBackendContext_new(
     context.fGraphicsQueueIndex = graphicsQueueIndex;
     context.fVkExtensions = &extensions;
     context.fGetProc = vkGetProc;
+    context.fProtectedContext = protectedContext;
+    context.fMaxAPIVersion = maxAPIVersion;
     // Since Skia m147, fMemoryAllocator is required for Vulkan context creation.
     // The binding initializes it here so Rust callers do not need to wire one manually.
     context.fMemoryAllocator = skgpu::VulkanMemoryAllocators::Make(context, skgpu::ThreadSafe::kYes);
@@ -214,5 +220,20 @@ extern "C" void C_VulkanYcbcrConversionInfo_Construct_Format(
     VkFormatFeatureFlags formatFeatures) {
     new (uninitialized) skgpu::VulkanYcbcrConversionInfo(
         format, ycbcrModel, ycbcrRange, xChromaOffset, yChromaOffset, chromaFilter, forceExplicitReconstruction, components, formatFeatures);
+}
+
+//
+// gpu/ganesh/vk/GrVkBackendSemaphore.h
+//
+
+extern "C" void C_GrBackendSemaphore_ConstructVk(
+    GrBackendSemaphore* uninitialized,
+    VkSemaphore semaphore) {
+    new(uninitialized) GrBackendSemaphore(GrBackendSemaphores::MakeVk(semaphore));
+}
+
+extern "C" VkSemaphore C_GrBackendSemaphores_GetVkSemaphore(
+    const GrBackendSemaphore* semaphore) {
+    return GrBackendSemaphores::GetVkSemaphore(*semaphore);
 }
 

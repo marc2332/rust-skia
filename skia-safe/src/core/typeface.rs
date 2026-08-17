@@ -270,11 +270,7 @@ impl Typeface {
     /// - `tag`: table tag.
     pub fn get_table_size(&self, tag: FontTableTag) -> Option<usize> {
         let size = unsafe { self.native().getTableSize(tag) };
-        if size != 0 {
-            Some(size)
-        } else {
-            None
-        }
+        if size != 0 { Some(size) } else { None }
     }
 
     /// Copies table `tag` data into `data`.
@@ -304,11 +300,7 @@ impl Typeface {
     /// Returns `None` on error.
     pub fn units_per_em(&self) -> Option<i32> {
         let units = unsafe { self.native().getUnitsPerEm() };
-        if units != 0 {
-            Some(units)
-        } else {
-            None
-        }
+        if units != 0 { Some(units) } else { None }
     }
 
     /// Returns horizontal kerning adjustments for `glyphs`.
@@ -335,6 +327,10 @@ impl Typeface {
     }
 
     /// Returns an iterator over all family names specified by the font.
+    ///
+    /// The iterator may borrow backend-owned data. In particular, Fontations-backed
+    /// typefaces expose localized strings through data tied to the typeface, so this
+    /// iterator must not outlive `self`.
     pub fn new_family_name_iterator(&self) -> impl Iterator<Item = LocalizedString> {
         LocalizedStringsIter::from_ptr(unsafe { self.native().createFamilyNameIterator() }).unwrap()
     }
@@ -368,10 +364,10 @@ impl Typeface {
         Some(name.as_str().into())
     }
 
-    /// Returns raw font data bytes and the TTC index.
+    /// Returns raw font data bytes and the TTC index (or 0 if not a collection).
     ///
     /// Returns `None` on failure.
-    pub fn to_font_data(&self) -> Option<(Vec<u8>, usize)> {
+    pub fn to_font_bytes(&self) -> Option<(Vec<u8>, u32)> {
         let mut ttc_index = 0;
         StreamAsset::from_ptr(unsafe { sb::C_SkTypeface_openStream(self.native(), &mut ttc_index) })
             .and_then(|mut stream| {
@@ -384,7 +380,23 @@ impl Typeface {
             })
     }
 
-    // TODO: openExistingStream()
+    /// Attempts to re-use existing font data when possible, avoiding additional
+    /// memory allocation. If existing font data is not available, the typical
+    /// way to access font data is via tables using `copy_table_data` (or
+    /// `get_table_data`).
+    ///
+    /// Returns a `Data` object which can access the font data and the TTC
+    /// index (or 0 if not a collection).
+    ///
+    /// Returns `None` on failure.
+    pub fn to_existing_font_data(&self) -> Option<(Data, u32)> {
+        let mut ttc_index = 0;
+        let stream = unsafe { sb::C_SkTypeface_openExistingStream(self.native(), &mut ttc_index) };
+        StreamAsset::from_ptr(stream).and_then(|stream| {
+            let data = unsafe { sb::C_SkStreamAsset_getData(stream.native()) };
+            Data::from_ptr_const(data).map(|data| (data, ttc_index.try_into().unwrap()))
+        })
+    }
 
     // TODO: createScalerContext()
 
@@ -462,12 +474,10 @@ mod tests {
     }
 
     #[test]
-    fn family_name_iterator_owns_the_strings_and_returns_at_least_one_name_for_the_default_typeface(
-    ) {
+    fn family_name_iterator_returns_at_least_one_name_for_the_default_typeface() {
         let fm = FontMgr::default();
         let tf = fm.legacy_make_typeface(None, FontStyle::normal()).unwrap();
         let family_names = tf.new_family_name_iterator();
-        drop(tf);
 
         let mut any = false;
         for name in family_names {
@@ -478,11 +488,26 @@ mod tests {
     }
 
     #[test]
-    fn get_font_data_of_default() {
+    fn get_font_bytes_of_default() {
         let tf = FontMgr::new()
             .legacy_make_typeface(None, FontStyle::normal())
             .unwrap();
-        let (data, _ttc_index) = tf.to_font_data().unwrap();
+        let (data, _ttc_index) = tf.to_font_bytes().unwrap();
         assert!(!data.is_empty());
+    }
+
+    #[test]
+    fn get_existing_font_data_of_default() {
+        let tf = FontMgr::new()
+            .legacy_make_typeface(None, FontStyle::normal())
+            .unwrap();
+
+        // If the font manager can supply data for the default font check
+        // that it isn't empty - this is a pretty trivial test
+        if let Some((data, _ttc_index)) = tf.to_existing_font_data() {
+            assert!(!data.is_empty());
+        } else {
+            println!("On this platform the default font does not supply existing font data.");
+        }
     }
 }

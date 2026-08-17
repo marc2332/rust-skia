@@ -4,10 +4,11 @@ use skia_bindings as sb;
 
 use super::{FontFamilies, TextAlign, TextDirection, TextStyle};
 use crate::{
+    FontStyle,
     interop::{self, AsStr, FromStrs, SetStr},
     modules::paragraph::TextHeightBehavior,
     prelude::*,
-    scalar, FontStyle,
+    scalar,
 };
 
 pub type StrutStyle = Handle<sb::skia_textlayout_StrutStyle>;
@@ -197,6 +198,7 @@ impl fmt::Debug for ParagraphStyle {
                 "letter_spacing_by_css_spec",
                 &self.letter_spacing_by_css_spec(),
             )
+            .field("render_soft_hyphens", &self.render_soft_hyphens())
             .finish()
     }
 }
@@ -340,6 +342,15 @@ impl ParagraphStyle {
 
     pub fn set_letter_spacing_by_css_spec(&mut self, value: bool) -> &mut Self {
         self.native_mut().fLetterSpacingByCSSSpec = value;
+        self
+    }
+
+    pub fn render_soft_hyphens(&self) -> bool {
+        self.native().fRenderSoftHyphens
+    }
+
+    pub fn set_render_soft_hyphens(&mut self, value: bool) -> &mut Self {
+        self.native_mut().fRenderSoftHyphens = value;
         self
     }
 }

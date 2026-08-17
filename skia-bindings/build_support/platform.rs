@@ -260,8 +260,8 @@ impl BindgenArgsBuilder {
 
 pub mod prelude {
     pub use self::{cargo::Target, skia::BuildConfiguration};
-    pub use super::{force_embedded_freetype, BindgenArgsBuilder, GnArgsBuilder, PlatformDetails};
-    pub use crate::build_support::{cargo, clang, features::feature, features::Features, skia};
+    pub use super::{BindgenArgsBuilder, GnArgsBuilder, PlatformDetails, force_embedded_freetype};
+    pub use crate::build_support::{cargo, clang, features::Features, features::feature, skia};
 
     pub fn quote(s: &str) -> String {
         format!("\"{s}\"")
@@ -276,10 +276,6 @@ pub mod prelude {
     }
 
     pub fn yes_if(y: bool) -> String {
-        if y {
-            yes()
-        } else {
-            no()
-        }
+        if y { yes() } else { no() }
     }
 }

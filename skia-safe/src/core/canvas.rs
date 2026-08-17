@@ -8,13 +8,15 @@ use skia_bindings::{
 
 #[cfg(feature = "gpu")]
 use crate::gpu;
-use crate::{
-    prelude::*, scalar, Bitmap, BlendMode, ClipOp, Color, Color4f, Data, Drawable, FilterMode,
-    Font, GlyphId, IPoint, IRect, ISize, Image, ImageFilter, ImageInfo, Matrix, Paint, Path,
-    Picture, Pixmap, Point, QuickReject, RRect, RSXform, Rect, Region, SamplingOptions, Shader,
-    Surface, SurfaceProps, TextBlob, TextEncoding, TileMode, Vector, Vertices, M44,
-};
+#[cfg(feature = "graphite")]
+use crate::graphite;
 use crate::{Arc, ColorSpace};
+use crate::{
+    Bitmap, BlendMode, ClipOp, Color, Color4f, Data, Drawable, FilterMode, Font, GlyphId, IPoint,
+    IRect, ISize, Image, ImageFilter, ImageInfo, M44, Matrix, Paint, Path, Picture, Pixmap, Point,
+    QuickReject, RRect, RSXform, Rect, Region, SamplingOptions, Shader, Surface, SurfaceProps,
+    TextBlob, TextEncoding, TileMode, Vector, Vertices, prelude::*, scalar,
+};
 
 pub use lattice::Lattice;
 
@@ -513,6 +515,21 @@ impl Canvas {
             .and_then(|mut c| c.as_direct_context())
     }
 
+    /// Returns the [`graphite::Recorder`] for the GPU surface backing this
+    /// canvas, if it is Graphite-backed.
+    ///
+    /// `SkCanvas::recorder()` returns a *borrowed* pointer — the recorder is
+    /// owned by the surface/canvas — so the result is a
+    /// [`graphite::BorrowedRecorder`] that does not delete the recorder on drop
+    /// and is bound to this canvas's lifetime. Wrapping it in an owning handle
+    /// would double-free the recorder.
+    #[cfg(feature = "graphite")]
+    pub fn recorder(&self) -> Option<graphite::BorrowedRecorder<'_>> {
+        let recorder =
+            graphite::Recorder::from_ptr(unsafe { sb::C_SkCanvas_recorder(self.native()) })?;
+        Some(graphite::BorrowedRecorder::from_canvas(recorder, self))
+    }
+
     /// Sometimes a canvas is owned by a surface. If it is, [`Self::surface()`] will return a bare
     /// pointer to that surface, else this will return `None`.
     ///
@@ -521,11 +538,13 @@ impl Canvas {
     /// relates to surface returned.
     /// See also [`OwnedCanvas`], [`RCHandle<SkSurface>::canvas()`].
     pub unsafe fn surface(&self) -> Option<Surface> {
-        // TODO: It might be possible to make this safe by returning a _kind of_ reference to the
-        //       Surface that can not be cloned and stays bound to the lifetime of canvas.
-        //       But even then, the Surface might exist twice then, which is confusing, but
-        //       probably safe, because the first instance is borrowed by the canvas.
-        Surface::from_unshared_ptr(self.native().getSurface())
+        unsafe {
+            // TODO: It might be possible to make this safe by returning a _kind of_ reference to the
+            //       Surface that can not be cloned and stays bound to the lifetime of canvas.
+            //       But even then, the Surface might exist twice then, which is confusing, but
+            //       probably safe, because the first instance is borrowed by the canvas.
+            Surface::from_unshared_ptr(self.native().getSurface())
+        }
     }
 
     /// Returns the pixel base address, [`ImageInfo`], `row_bytes`, and origin if the pixels
@@ -2311,7 +2330,7 @@ impl SetMatrix for Canvas {
 //
 
 pub mod lattice {
-    use crate::{prelude::*, Color, IRect};
+    use crate::{Color, IRect, prelude::*};
     use skia_bindings::{self as sb, SkCanvas_Lattice};
     use std::marker::PhantomData;
 
@@ -2442,8 +2461,8 @@ impl AutoCanvasRestore {
 #[cfg(test)]
 mod tests {
     use crate::{
-        canvas::SaveLayerFlags, canvas::SaveLayerRec, surfaces, AlphaType, Canvas, ClipOp, Color,
-        ColorType, ImageInfo, OwnedCanvas, Rect,
+        AlphaType, Canvas, ClipOp, Color, ColorType, ImageInfo, OwnedCanvas, Rect,
+        canvas::SaveLayerFlags, canvas::SaveLayerRec, surfaces,
     };
 
     #[test]

@@ -1,4 +1,4 @@
-use crate::{prelude::*, ColorType, Data, ImageInfo, Pixmap, YUVAInfo, YUVColorSpace};
+use crate::{ColorType, Data, ImageInfo, Pixmap, YUVAInfo, YUVColorSpace, prelude::*};
 use skia_bindings::{self as sb, SkYUVAPixmapInfo, SkYUVAPixmaps};
 use std::{ffi::c_void, fmt, ptr};
 use yuva_pixmap_info::SupportedDataTypes;
@@ -124,8 +124,9 @@ impl YUVAPixmapInfo {
         self.native().fDataType
     }
 
-    /// Row bytes for the ith plane. Returns `None` if `i` >= [`Self::num_planes()`] or this
-    /// [YUVAPixmapInfo] is invalid.
+    /// Row bytes for the ith plane.
+    ///
+    /// Returns [None] if `i` is out of range.
     pub fn row_bytes(&self, i: usize) -> Option<usize> {
         (i < self.num_planes()).then(|| unsafe {
             sb::C_SkYUVAPixmapInfo_rowBytes(self.native(), i.try_into().unwrap())
@@ -137,7 +138,9 @@ impl YUVAPixmapInfo {
         (0..self.num_planes()).map(move |i| self.row_bytes(i).unwrap())
     }
 
-    /// Image info for the ith plane, or `None` if `i` >= [`Self::num_planes()`]
+    /// Image info for the ith plane.
+    ///
+    /// Returns [None] if `i` is out of range.
     pub fn plane_info(&self, i: usize) -> Option<&ImageInfo> {
         (i < self.num_planes()).then(|| {
             ImageInfo::from_native_ref(unsafe {
@@ -169,18 +172,19 @@ impl YUVAPixmapInfo {
 
     /// Takes an allocation that is assumed to be at least [compute_total_bytes(&self)] in size and
     /// configures the first [numPlanes(&self)] entries in pixmaps array to point into that memory.
-    /// The remaining entries of pixmaps are default initialized. Returns [None] if this
-    /// [YUVAPixmapInfo] not valid.
+    /// The remaining entries of pixmaps are default initialized.
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn init_pixmaps_from_single_allocation(
         &self,
         memory: *mut c_void,
     ) -> Option<[Pixmap; Self::MAX_PLANES]> {
-        // Can't return a Vec<Pixmap> because Pixmaps can't be cloned.
-        let mut pixmaps: [Pixmap; Self::MAX_PLANES] = Default::default();
-        self.native()
-            .initPixmapsFromSingleAllocation(memory, pixmaps[0].native_mut())
-            .then_some(pixmaps)
+        unsafe {
+            // Can't return a Vec<Pixmap> because Pixmaps can't be cloned.
+            let mut pixmaps: [Pixmap; Self::MAX_PLANES] = Default::default();
+            self.native()
+                .initPixmapsFromSingleAllocation(memory, pixmaps[0].native_mut())
+                .then_some(pixmaps)
+        }
     }
 
     /// Is this valid and does it use color types allowed by the passed [SupportedDataTypes]?
@@ -265,10 +269,12 @@ impl YUVAPixmaps {
     /// [YUVAPixmapInfo::computeTotalBytes(&self)] allocated starting at memory.
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn from_external_memory(info: &YUVAPixmapInfo, memory: *mut c_void) -> Option<Self> {
-        Self::try_construct(|pixmaps| {
-            sb::C_SkYUVAPixmaps_FromExternalMemory(pixmaps, info.native(), memory);
-            Self::native_is_valid(pixmaps)
-        })
+        unsafe {
+            Self::try_construct(|pixmaps| {
+                sb::C_SkYUVAPixmaps_FromExternalMemory(pixmaps, info.native(), memory);
+                Self::native_is_valid(pixmaps)
+            })
+        }
     }
 
     /// Wraps existing `Pixmap`s. The [YUVAPixmaps] will have no ownership of the [Pixmap]s' pixel
@@ -280,10 +286,12 @@ impl YUVAPixmaps {
         info: &YUVAInfo,
         pixmaps: &[Pixmap; Self::MAX_PLANES],
     ) -> Option<Self> {
-        Self::try_construct(|pms| {
-            sb::C_SkYUVAPixmaps_FromExternalPixmaps(pms, info.native(), pixmaps[0].native());
-            Self::native_is_valid(pms)
-        })
+        unsafe {
+            Self::try_construct(|pms| {
+                sb::C_SkYUVAPixmaps_FromExternalPixmaps(pms, info.native(), pixmaps[0].native());
+                Self::native_is_valid(pms)
+            })
+        }
     }
 
     pub fn yuva_info(&self) -> &YUVAInfo {
@@ -313,7 +321,9 @@ impl YUVAPixmaps {
         }
     }
 
-    /// Get the ith [Pixmap] plane. `Pixmap` will be default initialized if i >= numPlanes.
+    /// Get the ith [Pixmap] plane.
+    ///
+    /// Panics if `i` is out of range.
     pub fn plane(&self, i: usize) -> &Pixmap {
         &self.planes()[i]
     }
@@ -324,7 +334,7 @@ impl YUVAPixmaps {
 }
 
 pub mod yuva_pixmap_info {
-    use crate::{prelude::*, ColorType};
+    use crate::{ColorType, prelude::*};
     use skia_bindings::{self as sb, SkYUVAPixmapInfo_SupportedDataTypes};
     use std::fmt;
 

@@ -3,7 +3,7 @@ name = "freya-skia-svg-macros"
 
 description = "Skia SVG Macros for Dom bindings"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
 rust-version.workspace = true
 
 homepage = "https://github.com/marc2332/rust-skia"

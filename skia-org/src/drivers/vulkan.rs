@@ -1,12 +1,12 @@
 use std::{ffi::CString, os::raw, path::Path, ptr};
 
 use ash::{
-    vk::{self, Handle},
     Entry, Instance,
+    vk::{self, Handle},
 };
-use skia_safe::{gpu, Canvas, ImageInfo};
+use skia_safe::{Canvas, ImageInfo, gpu};
 
-use crate::{artifact, drivers::DrawingDriver, Driver};
+use crate::{Driver, artifact, drivers::DrawingDriver};
 
 #[allow(dead_code)]
 pub struct Vulkan {
@@ -18,6 +18,8 @@ pub struct Vulkan {
 impl DrawingDriver for Vulkan {
     const DRIVER: Driver = Driver::Vulkan;
 
+    // Not sure why this is needed to satisfy clippy with 1.97.0
+    #[allow(unused)]
     fn new() -> Self {
         let ash_graphics = unsafe { AshGraphics::new("skia-org") };
         let context = {
@@ -32,7 +34,7 @@ impl DrawingDriver for Vulkan {
             };
 
             let backend_context = unsafe {
-                gpu::vk::BackendContext::new(
+                gpu::vk::BackendContext::new_builder(
                     ash_graphics.instance.handle().as_raw() as _,
                     ash_graphics.physical_device.as_raw() as _,
                     ash_graphics.device.handle().as_raw() as _,
@@ -41,7 +43,9 @@ impl DrawingDriver for Vulkan {
                         ash_graphics.queue_and_index.1,
                     ),
                     &get_proc,
+                    Some(AshGraphics::vulkan_version().unwrap_or((1, 1, 0)).into()),
                 )
+                .build()
             };
 
             gpu::direct_contexts::make_vulkan(&backend_context, None).unwrap()
@@ -77,6 +81,7 @@ impl DrawingDriver for Vulkan {
     }
 }
 
+#[allow(unused)]
 pub struct AshGraphics {
     pub entry: Entry,
     pub instance: Instance,
@@ -112,7 +117,7 @@ impl AshGraphics {
     }
 
     pub unsafe fn new(app_name: &str) -> AshGraphics {
-        let entry = Entry::load().unwrap();
+        let entry = unsafe { Entry::load() }.unwrap();
 
         // Minimum version supported by Skia.
         let minimum_version = vk::make_api_version(0, 1, 1, 0);
@@ -157,19 +162,23 @@ impl AshGraphics {
                 // Flag is needed to support MoltenVK on macOS.
                 .flags(vk::InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR);
 
-            entry
-                .create_instance(&create_info, None)
-                .expect("Failed to create a Vulkan instance")
+            unsafe {
+                entry
+                    .create_instance(&create_info, None)
+                    .expect("Failed to create a Vulkan instance")
+            }
         };
 
         let (physical_device, queue_family_index) = {
-            let physical_devices = instance
-                .enumerate_physical_devices()
-                .expect("Failed to enumerate Vulkan physical devices");
+            let physical_devices = unsafe {
+                instance
+                    .enumerate_physical_devices()
+                    .expect("Failed to enumerate Vulkan physical devices")
+            };
 
             physical_devices
                 .iter()
-                .map(|physical_device| {
+                .map(|physical_device| unsafe {
                     instance
                         .get_physical_device_queue_family_properties(*physical_device)
                         .iter()
@@ -200,13 +209,16 @@ impl AshGraphics {
                 .enabled_extension_names(&device_extension_names_raw)
                 .enabled_features(&features);
 
-            instance
-                .create_device(physical_device, &device_create_info, None)
-                .unwrap()
+            unsafe {
+                instance
+                    .create_device(physical_device, &device_create_info, None)
+                    .unwrap()
+            }
         };
 
         let queue_index: usize = 0;
-        let queue: vk::Queue = device.get_device_queue(queue_family_index as _, queue_index as _);
+        let queue: vk::Queue =
+            unsafe { device.get_device_queue(queue_family_index as _, queue_index as _) };
 
         AshGraphics {
             queue_and_index: (queue, queue_index),
@@ -221,11 +233,11 @@ impl AshGraphics {
         match of {
             gpu::vk::GetProcOf::Instance(instance, name) => {
                 let ash_instance = vk::Instance::from_raw(instance as _);
-                self.entry.get_instance_proc_addr(ash_instance, name)
+                unsafe { self.entry.get_instance_proc_addr(ash_instance, name) }
             }
             gpu::vk::GetProcOf::Device(device, name) => {
                 let ash_device = vk::Device::from_raw(device as _);
-                self.instance.get_device_proc_addr(ash_device, name)
+                unsafe { self.instance.get_device_proc_addr(ash_device, name) }
             }
         }
     }

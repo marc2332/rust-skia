@@ -1,19 +1,19 @@
 use ash::vk::Handle;
 use std::{ptr, sync::Arc};
 use vulkano::{
+    Validated, VulkanError, VulkanObject,
     device::Queue,
     image::{Image, ImageUsage},
     swapchain::{
-        acquire_next_image, PresentMode, Surface, Swapchain, SwapchainAcquireFuture,
-        SwapchainCreateInfo, SwapchainPresentInfo,
+        PresentMode, Surface, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
+        SwapchainPresentInfo, acquire_next_image,
     },
     sync::{self, GpuFuture},
-    Validated, VulkanError, VulkanObject,
 };
 
 use skia_safe::{
-    gpu::{self, backend_render_targets, direct_contexts, surfaces, vk},
     ColorType,
+    gpu::{self, backend_render_targets, direct_contexts, surfaces, vk},
 };
 
 use winit::{dpi::LogicalSize, dpi::PhysicalSize, window::Window};
@@ -38,6 +38,14 @@ impl VulkanRenderer {
         let device = queue.device();
         let instance = device.instance();
         let library = instance.library();
+        let backend_max_api_version = {
+            let api_version = device.api_version();
+            (
+                api_version.major as usize,
+                api_version.minor as usize,
+                api_version.patch as usize,
+            )
+        };
 
         // Before we can render to a window, we must first create a `vulkano::swapchain::Surface`
         // object from it, which represents the drawable surface of a window. For that we must wrap
@@ -169,8 +177,8 @@ impl VulkanRenderer {
             // We then pass skia_safe references to the whole shebang, resulting in a DirectContext
             // from which we'll be able to get a canvas reference that draws directly to swapchain images
             // on the swapchain.
-            let direct_context = direct_contexts::make_vulkan(
-                &vk::BackendContext::new(
+            direct_contexts::make_vulkan(
+                &vk::BackendContext::new_builder(
                     instance.handle().as_raw() as _,
                     device.physical_device().handle().as_raw() as _,
                     device.handle().as_raw() as _,
@@ -179,12 +187,12 @@ impl VulkanRenderer {
                         queue.queue_family_index() as usize,
                     ),
                     &get_proc,
-                ),
+                    Some(backend_max_api_version.into()),
+                )
+                .build(),
                 None,
             )
-            .unwrap();
-
-            direct_context
+            .unwrap()
         };
 
         VulkanRenderer {

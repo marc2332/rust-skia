@@ -2,7 +2,7 @@ use std::fmt;
 
 use skia_bindings::{self as sb, SkFlattenable, SkRefCntBase, SkShader};
 
-use crate::{prelude::*, ColorFilter, ColorSpace, Image, Matrix, NativeFlattenable, TileMode};
+use crate::{ColorFilter, ColorSpace, Image, Matrix, NativeFlattenable, TileMode, prelude::*};
 
 pub type Shader = RCHandle<SkShader>;
 unsafe_send_sync!(Shader);
@@ -48,7 +48,7 @@ impl fmt::Debug for Shader {
 /// shader, then the shader's color(s) are use instead, but they are
 /// modulated by the paint's alpha. This makes it easy to create a shader
 /// once (e.g. bitmap tiling or gradient) and then change its transparency
-/// w/o having to modify the original shader... only the paint's alpha needs
+/// without having to modify the original shader... only the paint's alpha needs
 /// to be modified.
 impl Shader {
     /// Returns `true` if the shader is guaranteed to produce only opaque
@@ -135,8 +135,8 @@ pub mod shaders {
     use skia_bindings as sb;
 
     use crate::{
-        prelude::*, Blender, Color, Color4f, ColorSpace, Image, Matrix, Rect, SamplingOptions,
-        Shader, TileMode,
+        Blender, Color, Color4f, ColorSpace, Image, Matrix, Rect, SamplingOptions, Shader,
+        TileMode, prelude::*,
     };
 
     pub fn empty() -> Shader {

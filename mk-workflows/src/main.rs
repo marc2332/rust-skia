@@ -473,11 +473,7 @@ impl From<&str> for Features {
             .split(',')
             .filter_map(|s| {
                 let f = s.trim().to_owned();
-                if !f.is_empty() {
-                    Some(f)
-                } else {
-                    None
-                }
+                if !f.is_empty() { Some(f) } else { None }
             })
             .collect();
         Features(strs)

@@ -1,6 +1,6 @@
 use std::{fmt, iter, marker::PhantomData, mem, ptr};
 
-use crate::{prelude::*, Contains, IPoint, IRect, IVector, Path, PathBuilder, QuickReject};
+use crate::{Contains, IPoint, IRect, IVector, Path, PathBuilder, QuickReject, prelude::*};
 use skia_bindings::{
     self as sb, SkRegion, SkRegion_Cliperator, SkRegion_Iterator, SkRegion_RunHead,
     SkRegion_Spanerator,
@@ -107,8 +107,11 @@ impl Region {
 
     pub fn set_rects(&mut self, rects: &[IRect]) -> bool {
         unsafe {
-            self.native_mut()
-                .setRects(rects.native().as_ptr(), rects.len().try_into().unwrap())
+            sb::C_SkRegion_setRects(
+                self.native_mut(),
+                rects.native().as_ptr(),
+                rects.len().try_into().unwrap(),
+            )
         }
     }
 
@@ -120,7 +123,7 @@ impl Region {
         unsafe { self.native_mut().setPath(path.native(), clip.native()) }
     }
 
-    // there is also a trait for intersects() below.
+    // There is also a trait for intersects() below.
 
     pub fn intersects_rect(&self, rect: impl AsRef<IRect>) -> bool {
         unsafe { self.native().intersects(rect.as_ref().native()) }
@@ -149,7 +152,7 @@ impl Region {
         unsafe { sb::C_SkRegion_quickContains(self.native(), r.native()) }
     }
 
-    // see also the quick_reject() trait below.
+    // See also the quick_reject() trait below.
 
     pub fn quick_reject_rect(&self, rect: impl AsRef<IRect>) -> bool {
         let rect = rect.as_ref();

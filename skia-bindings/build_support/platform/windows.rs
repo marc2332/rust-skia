@@ -75,6 +75,8 @@ impl PlatformDetails for Msvc {
 
         // <https://github.com/llvm/llvm-project/issues/95133>
         builder.cflag("-D__RTMINTRIN_H");
+
+        undefine_icu_renaming_guard(config, builder);
     }
 
     fn link_libraries(&self, features: &Features) -> Vec<String> {
@@ -89,8 +91,10 @@ impl PlatformDetails for Generic {
         true
     }
 
-    fn gn_args(&self, _config: &BuildConfiguration, builder: &mut GnArgsBuilder) {
+    fn gn_args(&self, config: &BuildConfiguration, builder: &mut GnArgsBuilder) {
         builder.target_os_and_default_cpu("win");
+
+        undefine_icu_renaming_guard(config, builder);
     }
 
     fn filter_platform_features(
@@ -112,9 +116,22 @@ impl PlatformDetails for Generic {
     }
 }
 
+/// Skia builds its vendored ICU with `U_DISABLE_RENAMING=1`, producing unversioned symbols
+/// like `ucptrie_close` that collide with the OS ICU import thunks in the `windows-targets`
+/// umbrella library. The linker can then silently bind ICU to `icu.dll`, which crashes at
+/// startup on Windows versions whose OS ICU is too old (e.g. Windows 10), and lld fails
+/// with duplicate symbol errors.
+/// Undefining the macro restores ICU's default version-suffixed names, making a collision
+/// impossible. See <https://github.com/rust-skia/rust-skia/issues/1242>.
+fn undefine_icu_renaming_guard(config: &BuildConfiguration, builder: &mut GnArgsBuilder) {
+    if config.features[feature::TEXTLAYOUT] {
+        builder.cflag("-UU_DISABLE_RENAMING");
+    }
+}
+
 fn generic_link_libraries(features: &Features) -> Vec<String> {
-    // `Advapi32` is needed by `skunicode_icu.lib`.
-    let mut libs = vec!["usp10", "ole32", "user32", "gdi32", "fontsub", "Advapi32"];
+    // `advapi32` is needed by `skunicode_icu.lib`.
+    let mut libs = vec!["usp10", "ole32", "user32", "gdi32", "fontsub", "advapi32"];
     if features[feature::GL] {
         libs.push("opengl32");
     }

@@ -71,6 +71,7 @@
 #include "include/core/SkRRect.h"
 #include "include/core/SkRSXform.h"
 #include "include/core/SkStream.h"
+#include "include/core/SkStrikeRef.h"
 #include "include/core/SkStrokeRec.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkSwizzle.h"
@@ -534,6 +535,11 @@ extern "C" void C_SkData_unref(const SkData* self) {
 
 extern "C" bool C_SkData_unique(const SkData* self) {
     return self->unique();
+}
+
+extern "C" SkData* C_SkData_shareSubset(const SkData* self, size_t offset, size_t length) {
+    auto subset = self->shareSubset(offset, length);
+    return const_cast<SkData*>(subset.release());
 }
 
 extern "C" SkData* C_SkData_MakeWithCopy(const void* data, size_t length) {
@@ -1570,6 +1576,14 @@ extern "C" void C_SkRRect_setRect(SkRRect* self, const SkRect* rect) {
     self->setRect(*rect);
 }
 
+extern "C" bool C_SkRRect_containsPoint(const SkRRect* self, const SkPoint* point) {
+    return self->contains(*point);
+}
+
+extern "C" bool C_SkRRect_containsRect(const SkRRect* self, const SkRect* rect) {
+    return self->contains(*rect);
+}
+
 extern "C" void C_SkRRect_dumpToString(const SkRRect* self, bool asHex, SkString* str) {
     *str = self->dumpToString(asHex);
 }
@@ -1596,6 +1610,10 @@ extern "C" bool C_SkRegion_set(SkRegion* self, const SkRegion* region) {
 
 extern "C" bool C_SkRegion_quickContains(const SkRegion* self, const SkIRect* r) {
     return self->quickContains(*r);
+}
+
+extern "C" bool C_SkRegion_setRects(SkRegion* self, const SkIRect* rects, int count) {
+    return self->setRects(SkSpan(rects, count));
 }
 
 extern "C" void C_SkRegion_getBoundaryPath(const SkRegion* self, SkPath* uninitialized) {
@@ -1732,7 +1750,7 @@ extern "C" void C_SkTypeface_serialize2(const SkTypeface* self, SkWStream* strea
 }
 
 extern "C" SkTypeface* C_SkTypeface_MakeDeserialize(SkStream* stream, SkFontMgr* lastResortFontMgr) {
-    return SkTypeface::MakeDeserialize(stream, sp(lastResortFontMgr)).release();
+    return SkTypeface::MakeDeserialize(stream, sp(lastResortFontMgr), nullptr).release();
 }
 
 extern "C" void C_SkTypeface_unicharsToGlyphs(const SkTypeface* self, const SkUnichar* uni, size_t uniCount, SkGlyphID* glyphs, size_t glyphsCount) {
@@ -1757,6 +1775,10 @@ extern "C" bool C_SkTypeface_getKerningPairAdjustments(const SkTypeface* self, c
 
 extern "C" SkStreamAsset* C_SkTypeface_openStream(const SkTypeface* self, int* ttcIndex) {
     return self->openStream(ttcIndex).release();
+}
+
+extern "C" SkStreamAsset* C_SkTypeface_openExistingStream(const SkTypeface* self, int* ttcIndex) {
+    return self->openExistingStream(ttcIndex).release();
 }
 
 extern "C" void C_SkTypeface_getBounds(const SkTypeface* self, SkRect* uninitialized) {
@@ -1891,6 +1913,59 @@ extern "C" void C_SkFont_getIntercepts(
     vs->set(r);
 }
 
+extern "C" void C_SkFont_makeStrikeRef(const SkFont* self, SkStrikeRef* uninitialized) {
+    new (uninitialized) SkStrikeRef(self->makeStrikeRef());
+}
+
+extern "C" void C_SkStrikeRef_CopyConstruct(SkStrikeRef* uninitialized, const SkStrikeRef* self) {
+    new (uninitialized) SkStrikeRef(*self);
+}
+
+extern "C" void C_SkStrikeRef_destruct(SkStrikeRef* self) {
+    self->~SkStrikeRef();
+}
+
+extern "C" bool C_SkStrikeRef_isValid(const SkStrikeRef* self) {
+    return static_cast<bool>(*self);
+}
+
+extern "C" void C_SkStrikeRef_getWidths(
+    const SkStrikeRef* self,
+    const SkGlyphID* glyphs,
+    size_t glyphCount,
+    SkScalar* widths,
+    size_t widthCount) {
+    self->getWidths(SkSpan(glyphs, glyphCount), SkSpan(widths, widthCount));
+}
+
+extern "C" SkScalar C_SkStrikeRef_getWidth(const SkStrikeRef* self, SkGlyphID glyph) {
+    return self->getWidth(glyph);
+}
+
+extern "C" void C_SkStrikeRef_getWidthsStrided(
+    const SkStrikeRef* self,
+    unsigned count,
+    const uint32_t* firstGlyph,
+    unsigned glyphStride32,
+    SkScalar* firstAdvance,
+    unsigned advanceStride32) {
+    self->getWidthsStrided(count, firstGlyph, glyphStride32, firstAdvance, advanceStride32);
+}
+
+extern "C" void C_SkStrikeRef_getWidthsBounds(
+    const SkStrikeRef* self,
+    const SkGlyphID* glyphs,
+    size_t glyphCount,
+    SkScalar* widths,
+    size_t widthCount,
+    SkRect* bounds,
+    size_t boundsCount) {
+    self->getWidthsBounds(
+        SkSpan(glyphs, glyphCount),
+        SkSpan(widths, widthCount),
+        SkSpan(bounds, boundsCount));
+}
+
 extern "C" bool C_SkFont_getPath(const SkFont* self, SkGlyphID glyphID, SkPath* pathR) {
     auto path = self->getPath(glyphID);
     if (!path) {
@@ -1965,6 +2040,10 @@ extern "C" int C_SkFontArguments_getSyntheticOblique(const SkFontArguments* self
 // core/SkFontMgr.h
 //
 
+static std::optional<bool> optional_bool(int value) {
+    return value < 0 ? std::nullopt : std::optional<bool>(value != 0);
+}
+
 extern "C" int C_SkFontStyleSet_count(SkFontStyleSet* self) {
     return self->count();
 }
@@ -2007,6 +2086,59 @@ extern "C" SkTypeface* C_SkFontMgr_matchFamilyStyleCharacter(
     const char* bcp47[], int bcp47Count,
     SkUnichar character) {
     return self->matchFamilyStyleCharacter(familyName, *style, bcp47, bcp47Count, character).release();
+}
+
+struct C_SkFontMgr_Request {
+    const SkFontMgr::Request::CMapEntry* cmapEntries;
+    size_t cmapEntryCount;
+    const char** bcp47;
+    size_t bcp47Count;
+    const char* familyName;
+    const SkFontArguments::VariationPosition::Coordinate* model;
+    size_t modelCount;
+    int syntheticBold;
+    int syntheticOblique;
+};
+
+static SkFontMgr::Request to_font_mgr_request(const C_SkFontMgr_Request& cRequest) {
+    SkFontMgr::Request request{};
+    request.cmapEntries = SkSpan(cRequest.cmapEntries, cRequest.cmapEntryCount);
+    request.bcp47 = SkSpan(cRequest.bcp47, cRequest.bcp47Count);
+    request.familyName = cRequest.familyName;
+    request.model = SkSpan(cRequest.model, cRequest.modelCount);
+    request.syntheticBold = optional_bool(cRequest.syntheticBold);
+    request.syntheticOblique = optional_bool(cRequest.syntheticOblique);
+    return request;
+}
+
+extern "C" SkTypeface* C_SkFontMgr_match(
+    const SkFontMgr* self,
+    const C_SkFontMgr_Request* request) {
+    return self->match(to_font_mgr_request(*request)).release();
+}
+
+extern "C" SkTypeface* C_SkFontMgr_fallback(
+    const SkFontMgr* self,
+    const C_SkFontMgr_Request* request) {
+    return self->fallback(to_font_mgr_request(*request)).release();
+}
+
+extern "C" void C_SkFontMgr_Request_fontStyleFromModel(
+    const SkFontArguments::VariationPosition::Coordinate* model,
+    size_t modelCount,
+    SkFontStyle* uninitialized) {
+    SkFontMgr::Request request{};
+    request.model = SkSpan(model, modelCount);
+    new (uninitialized) SkFontStyle(request.fontStyleFromModel());
+}
+
+extern "C" void C_SkFontMgr_Request_SetModel(
+    const SkFontStyle* style,
+    SkFontArguments::VariationPosition::Coordinate model[4]) {
+    // C array parameters decay to element pointers. Rebuild the 4-element array type
+    // because SkFontMgr::Request::SetModel expects Coordinate(&)[4].
+    auto* model4 = reinterpret_cast<SkFontArguments::VariationPosition::Coordinate(*)[4]>(model);
+    SkFontMgr::Request::SetModel(*style, *model4);
 }
 
 extern "C" SkTypeface* C_SkFontMgr_makeFromData(const SkFontMgr* self, SkData* data, int ttcIndex) {
@@ -2733,6 +2865,10 @@ extern "C" size_t C_SkStream_read(SkStream* stream, void* buffer, size_t len) {
 
 extern "C" size_t C_SkStreamAsset_getLength(const SkStreamAsset* self) {
     return self->getLength();
+}
+
+extern "C" const SkData* C_SkStreamAsset_getData(const SkStreamAsset* self) {
+    return self->getData().release();
 }
 
 extern "C" void C_SkWStream_destruct(SkWStream* self) {

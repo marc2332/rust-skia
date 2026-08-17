@@ -63,6 +63,9 @@ impl Configuration {
             if features.gpu() {
                 sources.push("src/gpu.cpp".into());
             }
+            if features.graphite() {
+                sources.push("src/graphite.cpp".into());
+            }
             if features[feature::TEXTLAYOUT] {
                 sources.extend(vec!["src/shaper.cpp".into(), "src/paragraph.cpp".into()]);
             }
@@ -239,11 +242,12 @@ pub fn generate_bindings(
         cc_args.push(std_cpp_arg);
     }
 
-    // Disable RTTI. Otherwise RustWStream may cause compilation errors.
-    bindgen_args.push("-fno-rtti".into());
+    // Disable RTTI on non-MSVC targets. On MSVC, RTTI must stay enabled (/GR)
+    // because std::function in <functional> uses typeid, which fails with /GR-.
     if target.builds_with_msvc() {
-        cc_args.push("/GR-".into());
+        cc_args.push("/GR".into());
     } else {
+        bindgen_args.push("-fno-rtti".into());
         cc_args.push("-fno-rtti".into());
     }
 
@@ -491,6 +495,8 @@ const OPAQUE_TYPES: &[&str] = &[
     "sksg::BlurImageFilter",
     // m147
     "std::unordered_map.*",
+    // Graphite types that expose std::unordered_set in public fields
+    "skgpu::graphite::Recording",
 ];
 
 const BLOCKLISTED_TYPES: &[&str] = &[
@@ -776,6 +782,11 @@ const ENUM_REWRITES: &[EnumEntry] = &[
     ("CompressionLevel", rewrite::k_opt_xxx),
     // m148: SkShapers::CT::LineBreakMode
     ("LineBreakMode", rewrite::k_xxx),
+    // graphite: skgpu::graphite::InsertStatus::V (the class-enum migration
+    // shim for Context::insertRecording's status)
+    ("V", rewrite::k_xxx),
+    // graphite: skgpu::graphite::SyncToCpu
+    ("SyncToCpu", rewrite::k_xxx),
 ];
 
 pub(crate) mod rewrite {
@@ -855,7 +866,10 @@ pub(crate) mod definitions {
     };
 
     use super::env;
-    use crate::build_support::features::{self, feature};
+    use crate::build_support::{
+        cargo,
+        features::{self, feature},
+    };
 
     /// A preprocessor definition.
     pub type Definition = (String, Option<String>);
@@ -945,8 +959,13 @@ pub(crate) mod definitions {
                 "obj/modules/skunicode/skunicode_core.ninja".into(),
                 "obj/modules/skunicode/skunicode_icu.ninja".into(),
             ]);
-            // shaper.cpp includes SkLoadICU.h
-            if !use_system_libraries {
+            // shaper.cpp includes SkLoadICU.h — skip bundled ICU ninja when
+            // system ICU is active (either via SKIA_USE_SYSTEM_LIBRARIES or
+            // skia_use_system_icu=true in SKIA_GN_ARGS).
+            let system_icu = use_system_libraries
+                || cargo::env_var("SKIA_GN_ARGS")
+                    .is_some_and(|args| args.contains("skia_use_system_icu=true"));
+            if !system_icu {
                 files.push("obj/third_party/icu/icu.ninja".into())
             }
         }
