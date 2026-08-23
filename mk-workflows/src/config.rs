@@ -119,10 +119,18 @@ pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
 fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
     match workflow.host_os {
         HostOS::Windows => {
-            vec!["gl,svg,textlayout,vulkan,webp".into()]
+            vec![
+                "gl,svg,textlayout,vulkan,webp".into(),
+                // Software-only rendering
+                "svg,textlayout,webp".into(),
+            ]
         }
         HostOS::MacOS => {
-            vec!["metal,svg,textlayout,webp".into()]
+            vec![
+                "metal,svg,textlayout,webp".into(),
+                // Software-only rendering
+                "svg,textlayout,webp".into(),
+            ]
         }
         HostOS::WindowsArm | HostOS::Wasm => {
             vec![]
@@ -131,10 +139,16 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
             vec![
                 // <https://github.com/rust-skia/rust-skia/issues/737>
                 "gl,svg,textlayout,vulkan,wayland,webp,x11".into(),
+                // Software-only rendering
+                "svg,textlayout,webp".into(),
             ]
         }
         HostOS::Android => {
-            vec!["gl,svg,textlayout,webp".into()]
+            vec![
+                "gl,svg,textlayout,webp".into(),
+                // Software-only rendering
+                "svg,textlayout,webp".into(),
+            ]
         }
     }
 }
