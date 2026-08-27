@@ -84,7 +84,6 @@ jobs:
         echo "SKIA_STAGING_PATH=${BUILD_ARTIFACTSTAGINGDIRECTORY}" >> ${GITHUB_ENV}
       env:
         BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ runner.temp }}
-        EMCC_CFLAGS: "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
 
     - name: 'Compress binaries'
       if: true
@@ -177,7 +176,6 @@ jobs:
         echo "SKIA_STAGING_PATH=${BUILD_ARTIFACTSTAGINGDIRECTORY}" >> ${GITHUB_ENV}
       env:
         BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ runner.temp }}
-        EMCC_CFLAGS: "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
 
     - name: 'Compress binaries'
       if: true

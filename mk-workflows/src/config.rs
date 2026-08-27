@@ -41,6 +41,14 @@ pub fn workflows() -> Vec<Workflow> {
             targets: macos_targets(),
             host_bin_ext: "",
         });
+        workflows.push(Workflow {
+            kind,
+            host_os: HostOS::Wasm,
+            host_target: "x86_64-unknown-linux-gnu",
+            job_template: WASM_JOB,
+            targets: wasm_targets(),
+            host_bin_ext: "",
+        });
     }
     workflows
 }
@@ -132,7 +140,7 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
                 "svg,textlayout,webp".into(),
             ]
         }
-        HostOS::WindowsArm | HostOS::Wasm => {
+        HostOS::WindowsArm => {
             vec![]
         }
         HostOS::Linux => {
@@ -143,7 +151,7 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
                 "svg,textlayout,webp".into(),
             ]
         }
-        HostOS::Android => {
+        HostOS::Android | HostOS::Wasm => {
             vec![
                 "gl,svg,textlayout,webp".into(),
                 // Software-only rendering

@@ -7,6 +7,9 @@ on:
     branches:
       - release
 
+permissions:
+  contents: write
+
 concurrency:
   group: 'wasm-binaries-${{ github.ref }}'
   cancel-in-progress: true
@@ -16,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features: ["", "gl", "textlayout", "gl,textlayout", "gl,svg,textlayout,webp"]
+        features: ["", "gl", "textlayout", "gl,textlayout", "svg,textlayout,webp", "gl,svg,textlayout,webp"]
         target: ["wasm32-unknown-emscripten"]
         include:
           - target: wasm32-unknown-emscripten
@@ -30,7 +33,7 @@ jobs:
     container: ghcr.io/pragmatrix/rust-skia-linux:latest
     env: 
       SKIA_DEBUG: 0
-      EMCC_CFLAGS: "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
+      EMCC_CFLAGS: "-fwasm-exceptions -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
 
     steps:
     - uses: actions/checkout@v3
@@ -70,38 +73,12 @@ jobs:
           source /emsdk/emsdk_env.sh
         fi
         cargo clean
-        cargo build -p skia-safe --release --features "${{ matrix.features }}" --target ${{ matrix.target }}
+        cargo build -p freya-skia-safe --release --features "${{ matrix.features }}" --target ${{ matrix.target }}
         echo "SKIA_BINARIES_TAG=$(cat "${BUILD_ARTIFACTSTAGINGDIRECTORY}/skia-binaries/tag.txt")" >> ${GITHUB_ENV}
         echo "SKIA_BINARIES_KEY=$(cat "${BUILD_ARTIFACTSTAGINGDIRECTORY}/skia-binaries/key.txt")" >> ${GITHUB_ENV}
         echo "SKIA_STAGING_PATH=${BUILD_ARTIFACTSTAGINGDIRECTORY}" >> ${GITHUB_ENV}
       env:
         BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ runner.temp }}
-        EMCC_CFLAGS: "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
-
-    - name: 'Run Clippy'
-      shell: bash
-      if: ${{ matrix.runClippy }}
-      run: |
-        cargo clippy --release --features "${{ matrix.features }}" --all-targets --target ${{ matrix.target }} -- -D warnings
-
-    - name: 'Test all workspace projects'
-      shell: bash
-      if: ${{ matrix.runTests }}
-      run: |
-        cargo test --all --release --features "${{ matrix.features }}" --all-targets --target ${{ matrix.target }} -- --nocapture
-
-    - name: 'Generate skia-org example images'
-      shell: bash
-      if: ${{ matrix.generateArtifacts }}
-      run: |
-        cargo run --release --features "${{ matrix.features }}" --target ${{ matrix.target }} "${{ env.SKIA_STAGING_PATH }}/skia-org" ${{ matrix.exampleArgs }}
-
-    - name: 'Upload skia-org example images'
-      if: ${{ matrix.generateArtifacts }}
-      uses: actions/upload-artifact@v4.6.0
-      with:
-        name: skia-org-images-${{ matrix.target }}
-        path: ${{ env.SKIA_STAGING_PATH }}/skia-org
 
     - name: 'Compress binaries'
       if: true
@@ -116,8 +93,8 @@ jobs:
       if: true
       uses: pragmatrix/release-action@v1.11.1-rs
       with:
-        owner: rust-skia
-        repo: skia-binaries
+        owner: marc2332
+        repo: rust-skia
         allowUpdates: true
         replacesArtifacts: true
         tag: '${{ env.SKIA_BINARIES_TAG }}'
