@@ -1,4 +1,5 @@
 pub mod direct_contexts {
+    //! Creates a Metal-backed [`crate::gpu::DirectContext`].
 
     use skia_bindings as sb;
 
@@ -18,6 +19,20 @@ pub mod direct_contexts {
     ) -> Option<DirectContext> {
         DirectContext::from_ptr(unsafe {
             sb::C_GrContext_MakeMetal(backend.native(), options.into().native_ptr_or_null())
+        })
+    }
+}
+
+pub mod contexts {
+    //! Creates a [`crate::Context`] wrapping a Ganesh GPU backend with Metal.
+    use skia_bindings as sb;
+
+    use crate::{Context, ContextOptions, gpu::mtl, prelude::*};
+
+    /// Creates a context wrapping a Ganesh GPU backend with Metal
+    pub fn make_ganesh(backend: &mtl::BackendContext, options: &ContextOptions) -> Option<Context> {
+        Context::from_ptr(unsafe {
+            sb::C_SkContexts_MakeGaneshMetal(backend.native(), options.native())
         })
     }
 }

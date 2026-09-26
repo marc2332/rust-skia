@@ -1,3 +1,6 @@
+//! Specifies the structure of planes for a YUV image with optional alpha. The actual planar data
+//! is not part of this structure and depending on usage is in external textures or pixmaps.
+
 use super::image_info;
 use crate::{EncodedOrigin, ISize, Matrix, prelude::*};
 use skia_bindings::{self as sb, SkYUVAInfo, SkYUVAInfo_Subsampling};
@@ -30,7 +33,7 @@ variant_name!(PlaneConfig::YUV);
 
 /// UV subsampling is also specified in the enum value names using J:a:b notation (e.g. 4:2:0 is
 /// 1/2 horizontal and 1/2 vertical resolution for U and V). If alpha is present it is not sub-
-/// sampled. Note that Subsampling values other than k444 are only valid with [PlaneConfig] values
+/// sampled. Note that Subsampling values other than k444 are only valid with [`PlaneConfig`] values
 /// that have U and V in different planes than Y (and A, if present).
 #[repr(i32)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -61,7 +64,7 @@ pub fn subsampling_factors(subsampling: Subsampling) -> (i32, i32) {
 }
 
 /// `SubsamplingFactors(Subsampling)` if `plane_index` refers to a U/V plane and otherwise `(1, 1)`
-/// if inputs are valid. Invalid inputs consist of incompatible [PlaneConfig] [Subsampling]
+/// if inputs are valid. Invalid inputs consist of incompatible [`PlaneConfig`] [`Subsampling`]
 /// `plane_index` combinations. `(0, 0)` is returned for invalid inputs.
 pub fn plane_subsampling_factors(
     plane: PlaneConfig,
@@ -107,14 +110,14 @@ pub fn plane_dimensions(
     plane_dimensions[0..size].to_vec()
 }
 
-/// Number of planes for a given [PlaneConfig].
+/// Number of planes for a given [`PlaneConfig`].
 pub fn num_planes(config: PlaneConfig) -> usize {
     unsafe { sb::C_SkYUVAInfo_NumPlanes(config) }
         .try_into()
         .unwrap()
 }
 
-/// Number of Y, U, V, A channels in the ith plane for a given [PlaneConfig] (or [None] if i is
+/// Number of Y, U, V, A channels in the ith plane for a given [`PlaneConfig`] (or `None` if i is
 /// invalid).
 pub fn num_channels_in_plane(config: PlaneConfig, i: usize) -> Option<usize> {
     (i < num_planes(config)).then(|| {
@@ -124,7 +127,7 @@ pub fn num_channels_in_plane(config: PlaneConfig, i: usize) -> Option<usize> {
     })
 }
 
-/// Does the [PlaneConfig] have alpha values?
+/// Does the [`PlaneConfig`] have alpha values?
 pub fn has_alpha(config: PlaneConfig) -> bool {
     unsafe { sb::SkYUVAInfo_HasAlpha(config) }
 }
@@ -274,8 +277,8 @@ impl YUVAInfo {
         num_channels_in_plane(self.plane_config(), i)
     }
 
-    /// Returns a [YUVAInfo] that is identical to this one but with the passed [Subsampling]. If the
-    /// passed [Subsampling] is not [Subsampling::S444] and this info's [PlaneConfig] is not
+    /// Returns a [`YUVAInfo`] that is identical to this one but with the passed [`Subsampling`]. If the
+    /// passed [`Subsampling`] is not [`Subsampling::S444`] and this info's [`PlaneConfig`] is not
     /// compatible with chroma subsampling (because Y is in the same plane as UV) then the result
     /// will be `None`.
     pub fn with_subsampling(&self, subsampling: Subsampling) -> Option<Self> {
@@ -285,7 +288,7 @@ impl YUVAInfo {
         Self::native_is_valid(&r).then(|| Self::from_native_c(r))
     }
 
-    /// Returns a [YUVAInfo] that is identical to this one but with the passed dimensions. If the
+    /// Returns a [`YUVAInfo`] that is identical to this one but with the passed dimensions. If the
     /// passed dimensions is empty then the result will be `None`.
     pub fn with_dimensions(&self, dimensions: impl Into<ISize>) -> Option<Self> {
         let r = construct(|info| unsafe {

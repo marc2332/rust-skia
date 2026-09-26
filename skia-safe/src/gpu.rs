@@ -1,14 +1,24 @@
-#[cfg(feature = "d3d")]
+//! GPU support for Skia: the Ganesh ([`crate::gpu::ganesh`]) and Graphite backends,
+//! their backend-specific APIs (D3D, GL, Metal, Vulkan), and the backend-agnostic GPU types
+//! shared between them.
+
+#[cfg(all(feature = "ganesh", feature = "d3d"))]
 pub mod d3d;
+#[cfg(feature = "ganesh")]
 pub mod ganesh;
-#[cfg(feature = "gl")]
+#[cfg(all(feature = "ganesh", feature = "gl"))]
 pub mod gl;
+#[cfg(feature = "graphite")]
+pub mod graphite;
+#[cfg(any(feature = "ganesh", feature = "graphite"))]
 mod mutable_texture_state;
+#[cfg(any(feature = "ganesh", feature = "graphite"))]
 mod types;
 #[cfg(feature = "vulkan")]
 pub mod vk;
 
 // Ganesh re-exports (these will probably be conflict with future graphite types)
+#[cfg(feature = "ganesh")]
 pub use ganesh::{
     BackendAPI, BackendFormat, BackendRenderTarget, BackendSemaphore, BackendTexture,
     DirectContext, DirectContextId, DriverBugWorkarounds, FlushInfo, PurgeResourceOptions,
@@ -16,21 +26,29 @@ pub use ganesh::{
     YUVABackendTextureInfo, YUVABackendTextures, context_options::ContextOptions, images,
 };
 
+#[cfg(any(feature = "ganesh", feature = "graphite"))]
 pub use mutable_texture_state::*;
+#[cfg(any(feature = "ganesh", feature = "graphite"))]
 pub use types::*;
 
-#[cfg(feature = "metal")]
+#[cfg(all(feature = "ganesh", feature = "metal"))]
 pub mod mtl {
+    //! Metal backend re-exports for the [`crate::gpu::ganesh::mtl`] backend.
     pub use super::ganesh::mtl::{BackendContext, types::*};
 }
 
+#[cfg(feature = "ganesh")]
 pub mod surfaces {
+    //! GPU surface creation functions for the Ganesh backends.
     #[cfg(feature = "metal")]
     pub use super::ganesh::mtl::surface_metal::*;
     pub use super::ganesh::surface_ganesh::*;
 }
 
+#[cfg(feature = "ganesh")]
 pub mod backend_formats {
+    //! Helpers for constructing and querying [`crate::gpu::BackendFormat`] across the Ganesh
+    //! backends (D3D, GL, Metal, Vulkan).
     #[cfg(feature = "d3d")]
     pub use super::ganesh::d3d::backend_formats::*;
     #[cfg(feature = "gl")]
@@ -41,7 +59,10 @@ pub mod backend_formats {
     pub use super::ganesh::vk::backend_formats::*;
 }
 
+#[cfg(feature = "ganesh")]
 pub mod backend_textures {
+    //! Helpers for constructing and querying [`crate::gpu::BackendTexture`] across the Ganesh
+    //! backends (D3D, GL, Metal, Vulkan).
     #[cfg(feature = "d3d")]
     pub use super::ganesh::d3d::backend_textures::*;
     #[cfg(feature = "gl")]
@@ -52,7 +73,10 @@ pub mod backend_textures {
     pub use super::ganesh::vk::backend_textures::*;
 }
 
+#[cfg(feature = "ganesh")]
 pub mod backend_render_targets {
+    //! Helpers for constructing and querying [`crate::gpu::BackendRenderTarget`] across the Ganesh
+    //! backends (D3D, GL, Metal, Vulkan).
     #[cfg(feature = "d3d")]
     pub use super::ganesh::d3d::backend_render_targets::*;
     #[cfg(feature = "gl")]
@@ -63,14 +87,20 @@ pub mod backend_render_targets {
     pub use super::ganesh::vk::backend_render_targets::*;
 }
 
+#[cfg(feature = "ganesh")]
 pub mod backend_semaphores {
+    //! Helpers for constructing and querying [`crate::gpu::BackendSemaphore`] across the Ganesh
+    //! backends (D3D and Vulkan).
     #[cfg(feature = "d3d")]
     pub use super::ganesh::d3d::backend_semaphores::*;
     #[cfg(feature = "vulkan")]
     pub use super::ganesh::vk::backend_semaphores::*;
 }
 
+#[cfg(feature = "ganesh")]
 pub mod direct_contexts {
+    //! Creates a [`crate::gpu::DirectContext`] for each of the Ganesh backends (D3D, GL, Metal,
+    //! Vulkan).
     #[cfg(feature = "d3d")]
     pub use super::ganesh::d3d::direct_contexts::*;
     #[cfg(feature = "gl")]
@@ -81,8 +111,9 @@ pub mod direct_contexts {
     pub use super::ganesh::vk::direct_contexts::*;
 }
 
-#[cfg(feature = "gl")]
+#[cfg(all(feature = "ganesh", feature = "gl"))]
 pub mod interfaces {
+    //! Creates the platform-specific GL [`crate::gpu::gl::Interface`] used to make OpenGL calls.
     #[cfg(feature = "egl")]
     pub use super::ganesh::gl::make_egl_interface::interfaces::*;
     #[cfg(target_os = "ios")]
@@ -95,7 +126,7 @@ pub mod interfaces {
     pub use super::ganesh::gl::make_win_interface::interfaces::*;
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ganesh"))]
 mod tests {
     use super::{DirectContext, RecordingContext};
 
@@ -118,3 +149,56 @@ mod tests {
         }
     }
 }
+
+// CPU-only APIs such as image encoding retain optional Ganesh context parameters even when
+// Ganesh is disabled. These uninhabited placeholders preserve those signatures and convert the
+// absent contexts to null pointers; Graphite does not provide replacements for these Ganesh types.
+#[allow(unknown_lints, clippy::uninhabited_references)]
+#[cfg(not(feature = "ganesh"))]
+mod stubs {
+    use std::{
+        ops::{Deref, DerefMut},
+        ptr,
+    };
+
+    use crate::prelude::*;
+
+    #[derive(Debug)]
+    pub enum RecordingContext {}
+
+    impl NativePointerOrNullMut for Option<&mut RecordingContext> {
+        type Native = skia_bindings::GrRecordingContext;
+
+        fn native_ptr_or_null_mut(&mut self) -> *mut skia_bindings::GrRecordingContext {
+            ptr::null_mut()
+        }
+    }
+
+    #[derive(Debug)]
+    pub enum DirectContext {}
+
+    impl Deref for DirectContext {
+        type Target = RecordingContext;
+
+        fn deref(&self) -> &Self::Target {
+            unsafe { transmute_ref(self) }
+        }
+    }
+
+    impl DerefMut for DirectContext {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            unsafe { transmute_ref_mut(self) }
+        }
+    }
+
+    impl NativePointerOrNullMut for Option<&mut DirectContext> {
+        type Native = skia_bindings::GrDirectContext;
+
+        fn native_ptr_or_null_mut(&mut self) -> *mut skia_bindings::GrDirectContext {
+            ptr::null_mut()
+        }
+    }
+}
+
+#[cfg(not(feature = "ganesh"))]
+pub use stubs::*;

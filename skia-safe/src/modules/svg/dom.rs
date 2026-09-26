@@ -87,6 +87,7 @@ impl Dom {
         Self::from_ptr(out).ok_or(LoadError)
     }
 
+    /// Returns the root (outermost) SVG element.
     pub fn root(&self) -> Svg {
         unsafe {
             Svg::from_unshared_ptr(sb::C_SkSVGDOM_getRoot(self.native()) as *mut _)
@@ -102,6 +103,13 @@ impl Dom {
         unsafe { sb::SkSVGDOM::render(self.native() as &_, canvas.native_mut()) }
     }
 
+    /// Specify a "container size" for the SVG dom.
+    ///
+    /// This is used to resolve the initial viewport when the root SVG width/height are specified
+    /// in relative units.
+    ///
+    /// If the root dimensions are in absolute units, then the container size has no effect since
+    /// the initial viewport is fixed.
     pub fn set_container_size(&mut self, size: impl Into<Size>) {
         let size = size.into();
         unsafe { sb::C_SkSVGDOM_setContainerSize(self.native_mut(), size.native()) }

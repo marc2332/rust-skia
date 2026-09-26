@@ -1,15 +1,21 @@
+//! Options for configuring a Ganesh [`crate::gpu::DirectContext`].
+
 use std::os::raw;
 
 use skia_bindings::{self as sb, GrContextOptions};
 
 use crate::{gpu::DriverBugWorkarounds, prelude::*};
 
+/// Options for enabling/disabling features, or using Skia's default behavior.
 pub use skia_bindings::GrContextOptions_Enable as Enable;
 variant_name!(Enable::Yes);
 
+/// This affects the usage of the persistent cache, see
+/// [`ContextOptions::shader_cache_strategy`].
 pub use skia_bindings::GrContextOptions_ShaderCacheStrategy as ShaderCacheStrategy;
 variant_name!(ShaderCacheStrategy::BackendSource);
 
+/// Options for the [`crate::gpu::DirectContext`].
 #[repr(C)]
 #[derive(Debug)]
 pub struct ContextOptions {
@@ -104,6 +110,8 @@ pub struct ContextOptions {
     /// Above this threshold size in device space glyphs are drawn as individual paths.
     pub glyphs_as_paths_font_size: f32,
 
+    /// Driver bug workarounds. Overrides may only reduce the feature set or limits, never
+    /// increase them beyond the detected values.
     pub driver_bug_workarounds: DriverBugWorkarounds,
 
     /// Construct mipmaps manually, via repeated downsampling draw-calls. This is used when
@@ -176,7 +184,7 @@ pub struct ContextOptions {
     /// This flag has no impact on non GL backends.
     pub always_use_text_storage_when_available: bool,
 
-    // Suppress prints for the GrContext.
+    /// Suppress prints for the [`crate::gpu::DirectContext`].
     pub suppress_prints: bool,
 }
 unsafe_send_sync!(ContextOptions);
@@ -188,6 +196,7 @@ impl Default for ContextOptions {
 }
 
 impl ContextOptions {
+    /// Constructs a [`ContextOptions`] with default values.
     pub fn new() -> Self {
         Self::default()
     }

@@ -1,3 +1,5 @@
+//! Encoding of images into the supported [`EncodedImageFormat`]s.
+
 use crate::{Bitmap, EncodedImageFormat, Pixmap};
 
 #[cfg(feature = "jpeg")]
@@ -9,6 +11,11 @@ pub mod png_encoder;
 pub mod webp_encoder;
 
 impl Pixmap<'_> {
+    /// Encodes the pixels of this pixmap into an image in the given format, and returns the encoded
+    /// bytes, or `None` if the format is not supported or the encoding fails.
+    ///
+    /// - `quality` An encoder specific value in the range `0..=100`. `None` selects the default of
+    ///   `100`.
     pub fn encode(
         &self,
         format: EncodedImageFormat,
@@ -19,6 +26,11 @@ impl Pixmap<'_> {
 }
 
 impl Bitmap {
+    /// Encodes the pixels of this bitmap into an image in the given format, and returns the encoded
+    /// bytes, or `None` if the format is not supported or the encoding fails.
+    ///
+    /// - `quality` An encoder specific value in the range `0..=100`. `None` selects the default of
+    ///   `100`.
     pub fn encode(
         &self,
         format: EncodedImageFormat,
@@ -29,6 +41,14 @@ impl Bitmap {
 }
 
 impl crate::Image {
+    /// Encode the image and return the resulting bytes, or `None` if the format is not supported or
+    /// the encoding fails.
+    ///
+    /// - `context` If the image was created as a texture-backed image on a GPU context, that context
+    ///   must be provided so the pixels can be read before being encoded. For raster-backed images,
+    ///   it can be `None`.
+    /// - `quality` An encoder specific value in the range `0..=100`. `None` selects the default of
+    ///   `100`.
     pub fn encode<'a>(
         &self,
         context: impl Into<Option<&'a mut crate::gpu::DirectContext>>,
@@ -40,6 +60,9 @@ impl crate::Image {
 }
 
 pub mod encode {
+    //! Free functions to encode images into bytes, dispatching to the appropriate encoder
+    //! (JPEG, PNG, WebP) based on the requested [`crate::EncodedImageFormat`].
+
     #[cfg(feature = "jpeg")]
     use super::jpeg_encoder;
     use super::png_encoder;
@@ -131,9 +154,12 @@ pub mod encode {
         }
     }
 
+    /// A keyword / text pair encoded as a comment into the `tEXt` ancillary chunk of a PNG.
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct Comment {
+        /// The keyword of the comment.
         pub keyword: String,
+        /// The text of the comment.
         pub text: String,
     }
 

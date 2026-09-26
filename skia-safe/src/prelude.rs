@@ -998,7 +998,7 @@ pub(crate) mod safer {
     use core::slice;
     use std::ptr;
 
-    /// Invokes [slice::from_raw_parts] with the `ptr` only when `len` != 0, otherwise passes
+    /// Invokes [`slice::from_raw_parts`] with the `ptr` only when `len` != 0, otherwise passes
     /// `ptr::NonNull::dangling()` as recommended.
     ///
     /// Panics if `len` != 0 and `ptr` is `null`.
@@ -1014,7 +1014,7 @@ pub(crate) mod safer {
         }
     }
 
-    /// Invokes [slice::from_raw_parts_mut] with the `ptr` only if `len` != 0, otherwise passes
+    /// Invokes [`slice::from_raw_parts_mut`] with the `ptr` only if `len` != 0, otherwise passes
     /// `ptr::NonNull::dangling()` as recommended.
     ///
     /// Panics if `len` != 0 and `ptr` is `null`.

@@ -60,8 +60,11 @@ impl Configuration {
             if features[feature::D3D] {
                 sources.push("src/d3d.cpp".into());
             }
-            if features.gpu() {
+            if features.has_gpu_engine() {
                 sources.push("src/gpu.cpp".into());
+            }
+            if features.ganesh() {
+                sources.push("src/ganesh.cpp".into());
             }
             if features.graphite() {
                 sources.push("src/graphite.cpp".into());
@@ -137,15 +140,27 @@ pub fn generate_bindings(
         .blocklist_type("GrContextPriv")
         .raw_line("pub enum GrContextPriv {}")
         .blocklist_function("GrContext_priv.*")
+        .blocklist_function("SkContext_priv.*")
         .blocklist_function("SkDeferredDisplayList_priv.*")
         .raw_line("pub enum SkVerticesPriv {}")
         .blocklist_type("SkVerticesPriv")
         .blocklist_function("SkVertices_priv.*")
         .blocklist_function("std::bitset_flip.*")
-        // Vulkan reexports that got swallowed by making them opaque.
-        // (these can not be allowlisted by a extern "C" function)
+        // Vulkan reexports that cannot be reached from an extern "C" function.
+        .allowlist_type("VkCommandBuffer")
+        .allowlist_type("VkExtent2D")
+        .allowlist_type("VkImage")
+        .allowlist_type("VkImageTiling")
+        .allowlist_type("VkImageUsageFlags")
+        .allowlist_type("VkOffset2D")
+        .allowlist_type("VkPhysicalDevice")
         .allowlist_type("VkPhysicalDeviceFeatures")
-        .allowlist_type("VkPhysicalDeviceFeatures2").
+        .allowlist_type("VkPhysicalDeviceFeatures2")
+        .allowlist_type("VkQueue")
+        .allowlist_type("VkRect2D")
+        .allowlist_type("VkRenderPass")
+        .allowlist_type("VkSemaphore")
+        .allowlist_type("VkSharingMode").
         // m91: These functions are not actually implemented.
         blocklist_function("SkCustomTypefaceBuilder_setGlyph[123].*")
         // m113: `SkUnicode` pulls in an impl block that forwards static functions that may not be
@@ -161,21 +176,6 @@ pub fn generate_bindings(
         .clang_arg(format!("-std=c++{CPP_VERSION}"))
         .clang_args(&["-x", "c++"])
         .clang_arg("-v");
-
-    // gpu builds
-
-    if build.features.gpu() {
-        builder = builder
-            // bindgen 0.70 alignment problems on i686-linux-android
-            .blocklist_type("GrBackendFormat_AnyFormatData")
-            .raw_line("#[repr(C, align(8))] pub struct GrBackendFormat_AnyFormatData { data: [u8;GrBackendFormat_kMaxSubclassSize + 1] }")
-            .blocklist_type("GrBackendTexture_AnyTextureData")
-            .raw_line("#[repr(C, align(8))] pub struct GrBackendTexture_AnyTextureData { data: [u8;GrBackendTexture_kMaxSubclassSize + 1] }")
-            .blocklist_type("GrBackendRenderTarget_AnyRenderTargetData")
-            .raw_line("#[repr(C, align(8))] pub struct GrBackendRenderTarget_AnyRenderTargetData { data: [u8;GrBackendRenderTarget_kMaxSubclassSize + 1] }")
-            .blocklist_type("GrBackendSemaphore_AnySemaphoreData")
-            .raw_line("#[repr(C, align(8))] pub struct GrBackendSemaphore_AnySemaphoreData { data: [u8;GrBackendSemaphore_kMaxSubclassSize + 1] }");
-    }
 
     // Don't generate destructors for Windows targets:
     // <https://github.com/rust-skia/rust-skia/issues/318>
@@ -255,8 +255,9 @@ pub fn generate_bindings(
     {
         let args = platform::bindgen_and_cc_args(&target, sysroot);
 
-        bindgen_args.extend(args.args.clone());
-        cc_args.extend(args.args);
+        bindgen_args.extend(args.bindgen_only_args);
+        bindgen_args.extend(args.shared_args.clone());
+        cc_args.extend(args.shared_args);
 
         let mut target_str = &target.to_string();
         let mut override_target = false;
@@ -482,6 +483,13 @@ const OPAQUE_TYPES: &[&str] = &[
     // LLVM21
     "std::basic_string.*",
     "std::__tree.*",
+    // clang 21 / libc++ with __rebind_alloc in __hash_table
+    // <https://github.com/rust-skia/rust-skia/issues/1331>
+    // With bindgen >= 0.73.2 the `__rebind_alloc` alias template is rendered
+    // as a valid generic alias (`pub type std___rebind_alloc<_Traits> = _Traits;`)
+    // and no blocklist entry is needed for it — verify before removing these.
+    "std::__rebind_alloc.*",
+    "std::__hash_table.*",
     // libstdc++ 10 on Linux (since m143, c++20)
     "std::strong_ordering",
     // skottie internal types with layout issues
@@ -949,8 +957,11 @@ pub(crate) mod definitions {
         use_system_libraries: bool,
     ) -> Vec<PathBuf> {
         let mut files = vec!["obj/skia.ninja".into()];
-        if features.gpu() {
+        if features.ganesh() {
             files.push("obj/gpu.ninja".into());
+        }
+        if features.graphite() {
+            files.push("obj/graphite.ninja".into());
         }
         if features[feature::TEXTLAYOUT] {
             files.extend(vec![

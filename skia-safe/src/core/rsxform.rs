@@ -1,6 +1,13 @@
 use crate::{Point, Size, Vector, prelude::*, scalar};
 use skia_bindings::SkRSXform;
 
+/// A compressed form of a rotation+scale matrix.
+///
+/// ```text
+/// [ fSCos     -fSSin    fTx ]
+/// [ fSSin      fSCos    fTy ]
+/// [     0          0      1 ]
+/// ```
 #[derive(Copy, Clone, PartialEq, Debug)]
 #[repr(C)]
 pub struct RSXform {
@@ -24,6 +31,15 @@ impl RSXform {
         }
     }
 
+    /// Initializes a new xform based on the scale, rotation (in radians), final `t` location, and
+    /// anchor point `a` within the source quad.
+    ///
+    /// Note: the anchor point is not normalized (e.g. 0...1) but is in pixels of the source image.
+    ///
+    /// - `scale` scale factor
+    /// - `radians` rotation in radians
+    /// - `t` final translation
+    /// - `a` anchor point within the source quad
     pub fn from_radians(
         scale: scalar,
         radians: scalar,

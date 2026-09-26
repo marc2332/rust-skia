@@ -5,6 +5,13 @@ use skia_bindings::{self as sb, SkRefCntBase, skgpu_MutableTextureState};
 use super::BackendApi;
 use crate::prelude::*;
 
+/// Since Skia and clients can both modify gpu textures and their connected state, Skia needs a
+/// way for clients to inform us if they have modifiend any of this state. In order to not need
+/// setters for every single API and state, we use this class to be a generic wrapper around all
+/// the mutable state. This class is used for calls that inform Skia of these texture/image state
+/// changes by the client as well as for requesting state changes to be done by Skia. The backend
+/// specific state that is wrapped by this class are located in files like:
+///   - `include/gpu/vk/VulkanMutableTextureState.h`
 pub type MutableTextureState = RCHandle<skgpu_MutableTextureState>;
 unsafe_send_sync!(MutableTextureState);
 

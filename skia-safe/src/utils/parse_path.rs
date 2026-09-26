@@ -1,3 +1,4 @@
+//! Parsing and serialization of SVG path data (Skia's `SkParsePath`), e.g. converting an SVG path string to a [`crate::Path`].
 use std::ffi::CString;
 
 use crate::{Path, interop, prelude::*};

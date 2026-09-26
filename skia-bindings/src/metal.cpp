@@ -4,7 +4,9 @@
 
 #include "bindings.h"
 
+#if defined(SK_GANESH)
 #include "include/core/SkColorSpace.h"
+#include "include/core/SkContext.h"
 #include "include/core/SkSurface.h"
 #include "include/gpu/ganesh/GrBackendSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
@@ -90,6 +92,12 @@ extern "C" GrDirectContext *C_GrContext_MakeMetal(
     return GrDirectContexts::MakeMetal(*context).release();
 }
 
+extern "C" SkContext* C_SkContexts_MakeGaneshMetal(
+    const GrMtlBackendContext* context,
+    const SkContextOptions* options) {
+    return SkContexts::MakeGanesh(*context, *options).release();
+}
+
 //
 // gpu/mtl/GrMtlBackendContext.h
 //
@@ -122,3 +130,4 @@ extern "C" void C_GrMtlTextureInfo_Destruct(GrMtlTextureInfo* self) {
 extern "C" bool C_GrMtlTextureInfo_Equals(const GrMtlTextureInfo* lhs, const GrMtlTextureInfo* rhs) {
     return *lhs == *rhs;
 }
+#endif

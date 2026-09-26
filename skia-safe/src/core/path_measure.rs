@@ -1,3 +1,6 @@
+//! Measures a [`crate::Path`]: computes its length and the position and tangent at a given
+//! distance.
+
 use crate::{ContourMeasure, Matrix, Path, PathBuilder, Point, Vector, prelude::*, scalar};
 use skia_bindings::{self as sb, SkPathMeasure};
 use std::fmt;
@@ -60,6 +63,15 @@ impl fmt::Debug for PathMeasure {
 /// eprintln!("Circle lengths: {:?}", &lengths);
 /// ```
 impl PathMeasure {
+    /// Initializes the path measure with the specified path. The parts of the path that are needed
+    /// are copied, so the client is free to modify/delete the path after this call.
+    ///
+    /// `res_scale` controls the precision of the measure. Values > 1 increase the precision (and
+    /// possibly slow down the computation).
+    ///
+    /// - `path` path to measure
+    /// - `force_closed` whether to treat the path as closed
+    /// - `res_scale` precision of the measure
     pub fn new(path: &Path, force_closed: bool, res_scale: impl Into<Option<scalar>>) -> Self {
         Self::from_native_c(unsafe {
             SkPathMeasure::new1(path.native(), force_closed, res_scale.into().unwrap_or(1.0))
@@ -75,16 +87,27 @@ impl PathMeasure {
         Self::new(path, force_closed, res_scale)
     }
 
+    /// Resets the path measure with the specified path. The parts of the path that are needed are
+    /// copied, so the client is free to modify/delete the path after this call.
+    ///
+    /// - `path` path to measure
+    /// - `force_closed` whether to treat the path as closed
     pub fn set_path(&mut self, path: &Path, force_closed: bool) -> &mut Self {
         unsafe { self.native_mut().setPath(path.native(), force_closed) }
         self
     }
 
+    /// Returns the total length of the current contour, or 0 if no path is associated.
     pub fn length(&mut self) -> scalar {
         unsafe { self.native_mut().getLength() }
     }
 
     // TODO: rename to get_pos_tan(), because the function expects arguments?
+    /// Pins `distance` to `0 <= distance <= length()`, and then computes the corresponding position
+    /// and tangent. Returns `None` if there is no path, or a zero-length path was specified, in
+    /// which case the position and tangent are unchanged.
+    ///
+    /// - `distance` distance along the contour
     #[must_use]
     pub fn pos_tan(&mut self, distance: scalar) -> Option<(Point, Vector)> {
         let mut position = Point::default();
@@ -116,6 +139,13 @@ impl PathMeasure {
         .then_some(m)
     }
 
+    /// Pins `distance` to `0 <= distance <= length()`, and then computes the corresponding matrix
+    /// (by calling [`Self::pos_tan()`]). Returns false if there is no path, or a zero-length path
+    /// was specified, in which case `matrix` is unchanged.
+    ///
+    /// - `distance` distance along the contour
+    /// - `matrix` storage for the computed matrix
+    /// - `flags` which matrix components to compute
     #[must_use]
     pub fn get_matrix(
         &mut self,
@@ -149,6 +179,15 @@ impl PathMeasure {
         .then(|| p.detach())
     }
 
+    /// Given a start and stop distance, appends to `dst` the intervening segment(s). If the segment
+    /// is zero-length, returns false, else returns true. `start_d` and `stop_d` are pinned to legal
+    /// values (`0..length()`). If `start_d > stop_d` then returns false (and leaves `dst`
+    /// untouched). Begins the segment with a move-to if `start_with_move_to` is true.
+    ///
+    /// - `start_d` start distance
+    /// - `stop_d` stop distance
+    /// - `dst` path builder receiving the segment
+    /// - `start_with_move_to` whether to begin with a move-to
     pub fn get_segment(
         &mut self,
         start_d: scalar,
@@ -162,12 +201,15 @@ impl PathMeasure {
         }
     }
 
+    /// Returns true if the current contour is closed.
     #[allow(clippy::wrong_self_convention)]
     pub fn is_closed(&mut self) -> bool {
         unsafe { self.native_mut().isClosed() }
     }
 
     // TODO: rename to has_next_contour()?
+    /// Moves to the next contour in the path. Returns true if one exists, or false if we're done
+    /// with the path.
     pub fn next_contour(&mut self) -> bool {
         unsafe { self.native_mut().nextContour() }
     }

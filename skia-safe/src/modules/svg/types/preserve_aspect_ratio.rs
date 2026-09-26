@@ -1,3 +1,4 @@
+//! The SVG `preserveAspectRatio` attribute, controlling how content scales and aligns within its viewport.
 use skia_bindings as sb;
 
 pub type Align = sb::SkSVGPreserveAspectRatio_Align;

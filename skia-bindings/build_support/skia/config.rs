@@ -124,7 +124,7 @@ impl FinalBuildConfiguration {
                 .arg("skia_use_partition_alloc", no())
                 .arg("is_debug", yes_if(build.skia_debug))
                 .arg("skia_enable_svg", yes_if(features[feature::SVG]))
-                .arg("skia_enable_ganesh", yes_if(features.gpu()))
+                .arg("skia_enable_ganesh", yes_if(features.ganesh()))
                 .arg("skia_enable_graphite", yes_if(features.graphite()))
                 .arg("skia_enable_skottie", yes_if(features[feature::SKOTTIE]))
                 .arg("skia_enable_pdf", yes_if(features[feature::PDF]))
@@ -150,9 +150,18 @@ impl FinalBuildConfiguration {
                 .arg(
                     "skia_use_libjpeg_turbo_encode",
                     yes_if(features[feature::JPEG_ENCODE]),
-                )
-                .arg("cc", quote(&build.cc))
-                .arg("cxx", quote(&build.cxx));
+                );
+
+            if platform::provides_tools(&build.target) {
+                // The platform writes its own compiler tools through `gn_args` (for example the
+                // emcc wrappers of the emsdk). Defaults derived from the host would duplicate those
+                // and cannot build for the target anyway; GN rejects duplicate arguments, so
+                // exactly one source must supply them.
+            } else {
+                builder
+                    .arg("cc", quote(&build.cc))
+                    .arg("cxx", quote(&build.cxx));
+            }
             if features[feature::VULKAN] {
                 builder
                     .arg("skia_use_vulkan", yes())
@@ -185,9 +194,9 @@ impl FinalBuildConfiguration {
                     .arg("skia_pdf_subset_harfbuzz", yes())
                     .arg("skia_use_system_harfbuzz", yes_if(use_system_libraries))
                     .arg("skia_enable_skparagraph", yes());
-                // note: currently, tests need to be enabled, because modules/skparagraph
-                // is not included in the default dependency configuration.
-                // ("paragraph_tests_enabled", no()),
+                // note: currently, tests need to be enabled, because modules/skparagraph is not
+                // included in the default dependency configuration. ("paragraph_tests_enabled",
+                // no()),
             } else {
                 builder
                     .arg("skia_use_icu", no())

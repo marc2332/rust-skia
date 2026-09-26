@@ -1,3 +1,4 @@
+//! A [`crate::svg::Canvas`] that records drawing operations and emits them as SVG.
 use std::{fmt, ops::Deref, pin::Pin, ptr};
 
 use skia_bindings::{self as sb, SkCanvas};

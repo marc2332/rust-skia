@@ -26,7 +26,8 @@ pub use text_shadow::*;
 pub use text_style::*;
 pub use typeface_font_provider::*;
 
-/// Efficient reference type to a C++ vector of font family SkStrings.
+/// Efficient reference type to a C++ vector of font family strings
+/// (`skia_bindings::SkStrings`).
 ///
 /// Use indexer or .iter() to access the Rust str references.
 #[derive(Debug)]

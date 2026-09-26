@@ -1,3 +1,5 @@
+//! Describes the style of a font: weight, width, and slant.
+
 use crate::prelude::*;
 use skia_bindings::{self as sb, SkFontStyle, SkFontStyle_Weight, SkFontStyle_Width};
 use std::{fmt, ops::Deref};

@@ -1,3 +1,6 @@
+//! Support for creating custom [`crate::Shader`]s and [`crate::ColorFilter`]s from Skia's SkSL
+//! shading language. This API is experimental and subject to change.
+
 use crate::{
     Blender, ColorFilter, Data, Matrix, Shader,
     interop::{self, AsStr},
@@ -10,6 +13,7 @@ use skia_bindings::{
 };
 use std::{fmt, marker::PhantomData, ops::DerefMut, ptr};
 
+/// Reflected description of a uniform variable in the effect's SkSL.
 pub type Uniform = Handle<SkRuntimeEffect_Uniform>;
 unsafe_send_sync!(Uniform);
 
@@ -29,40 +33,54 @@ impl fmt::Debug for Uniform {
 }
 
 impl Uniform {
+    /// The name of the uniform variable in the effect's SkSL.
     pub fn name(&self) -> &str {
         self.native().name.as_str()
     }
 
+    /// The offset in bytes of the uniform within the uniform data block.
     pub fn offset(&self) -> usize {
         self.native().offset
     }
 
+    /// The SkSL type of the uniform.
     pub fn ty(&self) -> uniform::Type {
         self.native().type_
     }
 
+    /// The number of elements in the uniform. 1 for non-array uniforms.
     pub fn count(&self) -> i32 {
         self.native().count
     }
 
+    /// The flags of the uniform, see [`uniform::Flags`].
     pub fn flags(&self) -> uniform::Flags {
         uniform::Flags::from_bits(self.native().flags).unwrap()
     }
 
+    /// Returns true if the uniform is declared as an array. [`Uniform::count()`] contains the
+    /// array length.
     pub fn is_array(&self) -> bool {
         self.flags().contains(uniform::Flags::ARRAY)
     }
 
+    /// Returns true if the uniform is declared with `layout(color)`. Colors should be supplied
+    /// as unpremultiplied, extended-range (unclamped) sRGB. The uniform will be automatically
+    /// transformed to unpremultiplied extended-range working-space colors.
     pub fn is_color(&self) -> bool {
         self.flags().contains(uniform::Flags::COLOR)
     }
 
+    /// The size in bytes of the uniform (or the whole array, for array uniforms).
     pub fn size_in_bytes(&self) -> usize {
         unsafe { self.native().sizeInBytes() }
     }
 }
 
 pub mod uniform {
+    //! Types that describe the uniforms of a [`crate::RuntimeEffect`], e.g. [`Type`] and
+    //! [`Flags`].
+
     use skia_bindings as sb;
 
     pub use sb::SkRuntimeEffect_Uniform_Type as Type;
@@ -86,6 +104,8 @@ variant_name!(ChildType::Shader);
 #[deprecated(since = "0.41.0", note = "Use Child")]
 pub type Varying = Child;
 
+/// Reflected description of a uniform child (shader, color filter, or blender) in the
+/// effect's SkSL.
 pub type Child = Handle<SkRuntimeEffect_Child>;
 unsafe_send_sync!(Child);
 
@@ -106,19 +126,24 @@ impl fmt::Debug for Child {
 }
 
 impl Child {
+    /// The name of the child in the effect's SkSL.
     pub fn name(&self) -> &str {
         self.native().name.as_str()
     }
 
+    /// The [`ChildType`] of the child.
     pub fn ty(&self) -> ChildType {
         self.native().type_
     }
 
+    /// The index of the child in [`RuntimeEffect::children()`].
     pub fn index(&self) -> usize {
         self.native().index.try_into().unwrap()
     }
 }
 
+/// [`RuntimeEffect`] supports creating custom [`Shader`] and [`ColorFilter`] objects using
+/// Skia's SkSL shading language.
 pub type RuntimeEffect = RCHandle<SkRuntimeEffect>;
 
 impl NativeRefCountedBase for SkRuntimeEffect {
@@ -127,8 +152,13 @@ impl NativeRefCountedBase for SkRuntimeEffect {
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+/// Options for creating a [`RuntimeEffect`].
 pub struct Options<'a> {
+    /// For testing purposes, disables optimization and inlining. (Normally, runtime effects
+    /// don't run the inliner directly, but they still get an inlining pass once they are
+    /// painted.)
     pub force_unoptimized: bool,
+    /// When possible this name will be used to identify the created runtime effect.
     pub name: &'a str,
 }
 
@@ -146,6 +176,18 @@ impl fmt::Debug for RuntimeEffect {
 }
 
 impl RuntimeEffect {
+    /// Creates a runtime effect for use as a [`ColorFilter`].
+    ///
+    /// Color filter SkSL requires an entry point that looks like:
+    ///
+    /// ```text
+    /// vec4 main(vec4 inColor) { ... }
+    /// ```
+    ///
+    /// - `sksl` the SkSL source code of the effect
+    /// - `options` options for creating the effect
+    ///
+    /// Returns the effect, or the compiler error message on failure.
     pub fn make_for_color_filter(
         sksl: impl AsRef<str>,
         options: Option<&Options<'_>>,
@@ -160,6 +202,20 @@ impl RuntimeEffect {
         .ok_or_else(|| error.to_string())
     }
 
+    /// Creates a runtime effect for use as a [`Shader`].
+    ///
+    /// Shader SkSL requires an entry point that looks like:
+    ///
+    /// ```text
+    /// vec4 main(vec2 inCoords) { ... }
+    /// ```
+    ///
+    /// The color that is returned should be premultiplied.
+    ///
+    /// - `sksl` the SkSL source code of the effect
+    /// - `options` options for creating the effect
+    ///
+    /// Returns the effect, or the compiler error message on failure.
     pub fn make_for_shader(
         sksl: impl AsRef<str>,
         options: Option<&Options<'_>>,
@@ -174,6 +230,18 @@ impl RuntimeEffect {
         .ok_or_else(|| error.to_string())
     }
 
+    /// Creates a runtime effect for use as a [`Blender`].
+    ///
+    /// Blend SkSL requires an entry point that looks like:
+    ///
+    /// ```text
+    /// vec4 main(vec4 srcColor, vec4 dstColor) { ... }
+    /// ```
+    ///
+    /// - `sksl` the SkSL source code of the effect
+    /// - `options` options for creating the effect
+    ///
+    /// Returns the effect, or the compiler error message on failure.
     pub fn make_for_blender(
         sksl: impl AsRef<str>,
         options: Option<&Options<'_>>,
@@ -199,6 +267,13 @@ impl RuntimeEffect {
         })
     }
 
+    /// Creates a [`Shader`] from this effect.
+    ///
+    /// - `uniforms` a [`Data`] block of size [`RuntimeEffect::uniform_size()`], containing
+    ///   values for all uniform variables
+    /// - `children` the child shaders/color filters/blenders required by the effect, in the
+    ///   order given by [`RuntimeEffect::children()`]
+    /// - `local_matrix` an optional local matrix applied to the shader
     pub fn make_shader<'a>(
         &self,
         uniforms: impl Into<Data>,
@@ -224,6 +299,11 @@ impl RuntimeEffect {
         })
     }
 
+    /// Creates a [`ColorFilter`] from this effect.
+    ///
+    /// - `inputs` a [`Data`] block of size [`RuntimeEffect::uniform_size()`], containing
+    ///   values for all uniform variables
+    /// - `children` the child color filters/shaders required by the effect
     pub fn make_color_filter<'a>(
         &self,
         inputs: impl Into<Data>,
@@ -247,6 +327,11 @@ impl RuntimeEffect {
         })
     }
 
+    /// Creates a [`Blender`] from this effect.
+    ///
+    /// - `uniforms` a [`Data`] block of size [`RuntimeEffect::uniform_size()`], containing
+    ///   values for all uniform variables
+    /// - `children` the child blenders/color filters/shaders required by the effect
     pub fn make_blender<'a>(
         &self,
         uniforms: impl Into<Data>,
@@ -272,6 +357,7 @@ impl RuntimeEffect {
 
     // TODO: wrap MakeTraced
 
+    /// Returns the SkSL source of the runtime effect shader.
     pub fn source(&self) -> &str {
         let mut len = 0;
         let ptr = unsafe { sb::C_SkRuntimeEffect_source(self.native(), &mut len) };
@@ -283,6 +369,9 @@ impl RuntimeEffect {
         self.uniform_size()
     }
 
+    /// Combined size of all uniform variables. When calling
+    /// [`RuntimeEffect::make_color_filter()`] or [`RuntimeEffect::make_shader()`], provide a
+    /// [`Data`] of this size, containing values for all of those variables.
     pub fn uniform_size(&self) -> usize {
         unsafe { self.native().uniformSize() }
     }
@@ -292,6 +381,7 @@ impl RuntimeEffect {
         self.uniforms()
     }
 
+    /// The descriptions of all uniform variables in the effect's SkSL.
     pub fn uniforms(&self) -> &[Uniform] {
         unsafe {
             let mut count: usize = 0;
@@ -300,6 +390,7 @@ impl RuntimeEffect {
         }
     }
 
+    /// The descriptions of all child effects in the effect's SkSL.
     pub fn children(&self) -> &[Child] {
         unsafe {
             let mut count: usize = 0;
@@ -313,6 +404,7 @@ impl RuntimeEffect {
         self.find_uniform(name)
     }
 
+    /// Returns the description of the named uniform variable, or `None` if not found.
     pub fn find_uniform(&self, name: impl AsRef<str>) -> Option<&Uniform> {
         let name = name.as_ref().as_bytes();
         unsafe { sb::C_SkRuntimeEffect_findUniform(self.native(), name.as_ptr() as _, name.len()) }
@@ -320,6 +412,7 @@ impl RuntimeEffect {
             .map(|ptr| Uniform::from_native_ref(unsafe { ptr.as_ref() }))
     }
 
+    /// Returns the description of the named child, or `None` if not found.
     pub fn find_child(&self, name: impl AsRef<str>) -> Option<&Child> {
         let name = name.as_ref().as_bytes();
         unsafe { sb::C_SkRuntimeEffect_findChild(self.native(), name.as_ptr() as _, name.len()) }
@@ -327,20 +420,25 @@ impl RuntimeEffect {
             .map(|ptr| Child::from_native_ref(unsafe { ptr.as_ref() }))
     }
 
+    /// Returns whether this effect can be used as a [`Shader`].
     pub fn allow_shader(&self) -> bool {
         unsafe { sb::C_SkRuntimeEffect_allowShader(self.native()) }
     }
 
+    /// Returns whether this effect can be used as a [`ColorFilter`].
     pub fn allow_color_filter(&self) -> bool {
         unsafe { sb::C_SkRuntimeEffect_allowColorFilter(self.native()) }
     }
 
+    /// Returns whether this effect can be used as a [`Blender`].
     pub fn allow_blender(&self) -> bool {
         unsafe { sb::C_SkRuntimeEffect_allowBlender(self.native()) }
     }
 }
 
 #[derive(Clone, Debug)]
+/// Object that allows passing a [`Shader`], [`ColorFilter`], or [`Blender`] as a child to
+/// [`RuntimeEffect::make_shader()`] and friends.
 pub enum ChildPtr {
     Shader(Shader),
     ColorFilter(ColorFilter),
@@ -368,6 +466,7 @@ impl From<Blender> for ChildPtr {
 // TODO: Create `ChildPtr` from a Flattenable?
 
 impl ChildPtr {
+    /// The [`ChildType`] of this child.
     pub fn ty(&self) -> ChildType {
         match self {
             ChildPtr::Shader(_) => ChildType::Shader,
@@ -428,6 +527,9 @@ impl NativeDrop for sb::SkRuntimeShaderBuilder {
 }
 
 impl RuntimeShaderBuilder {
+    /// Creates a builder for `effect` that manages creating an input data block and provides
+    /// named access to the uniform variables in that block. The equivalent of Skia's
+    /// SkRuntimeEffectBuilder.
     pub fn new(effect: RuntimeEffect) -> Self {
         Self::construct(|builder| unsafe {
             let effect: *mut SkRuntimeEffect = effect.into_ptr() as _;
@@ -435,6 +537,9 @@ impl RuntimeShaderBuilder {
         })
     }
 
+    /// Creates the [`Shader`] from the configured builder.
+    ///
+    /// - `local_matrix` the local matrix applied to the resulting shader
     pub fn make_shader(&self, local_matrix: &Matrix) -> Option<Shader> {
         unsafe {
             let instance = self.native_mut_force();
@@ -448,13 +553,13 @@ impl RuntimeShaderBuilder {
     /// Supported types are `float`, `float2`, `float3`, `float4`, `float2x2`, `float3x3`, `float4x4`.
     ///
     /// The data array must have the correct length for the corresponding uniform type:
-    /// - `float`: `[f32; 1]`
-    /// - `float2`: `[f32; 2]`
-    /// - `float3`: `[f32; 3]`
-    /// - `float4`: `[f32; 4]`
-    /// - `float2x2`: `[f32; 4]`
-    /// - `float3x3`: `[f32; 9]`
-    /// - `float4x4`: `[f32; 16]`
+    /// - `float` `[f32; 1]`
+    /// - `float2` `[f32; 2]`
+    /// - `float3` `[f32; 3]`
+    /// - `float4` `[f32; 4]`
+    /// - `float2x2` `[f32; 4]`
+    /// - `float3x3` `[f32; 9]`
+    /// - `float4x4` `[f32; 16]`
     ///
     pub fn set_uniform_float(
         &mut self,
@@ -481,10 +586,10 @@ impl RuntimeShaderBuilder {
     /// Supported types are `int`, `int2`, `int3`, `int4`.
     ///
     /// The data array must have the correct length for the corresponding uniform type:
-    /// - `int`: `[i32; 1]`
-    /// - `int2`: `[i32; 2]`
-    /// - `int3`: `[i32; 3]`
-    /// - `int4`: `[i32; 4]`
+    /// - `int` `[i32; 1]`
+    /// - `int2` `[i32; 2]`
+    /// - `int3` `[i32; 3]`
+    /// - `int4` `[i32; 4]`
     ///
     ///
     pub fn set_uniform_int(

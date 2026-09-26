@@ -1,3 +1,5 @@
+//! Types used by [`crate::Path`]: fill type, direction, segment mask, and verb.
+
 use skia_bindings as sb;
 
 pub type PathFillType = sb::SkPathFillType;

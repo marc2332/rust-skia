@@ -1,7 +1,15 @@
+//! Factory functions for creating [`crate::Blender`]s, e.g. the arithmetic blender
+//! `k1 * src * dst + k2 * src + k3 * dst + k4`.
+
 use crate::Blender;
 use skia_bindings as sb;
 
 impl Blender {
+    /// Create a blender that implements the following:
+    /// `k1 * src * dst + k2 * src + k3 * dst + k4`
+    ///
+    /// - `k1`, `k2`, `k3`, `k4` the four coefficients
+    /// - `enforce_premul` if `true`, the RGB channels will be clamped to the calculated alpha
     pub fn arithmetic(k1: f32, k2: f32, k3: f32, k4: f32, enforce_premul: bool) -> Option<Blender> {
         arithmetic(k1, k2, k3, k4, enforce_premul)
     }

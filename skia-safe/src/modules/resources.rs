@@ -1,3 +1,4 @@
+//! Resource provider interfaces for loading images, fonts, and other assets used by animation and vector modules (Skia's `skresources` module).
 use std::{borrow::Cow, ffi::CStr, mem, os::raw, ptr};
 
 use helpers::ResourceKind;
@@ -8,6 +9,7 @@ use skia_bindings::{
 
 use crate::{Data, FontMgr, Typeface, prelude::*};
 
+/// Image asset proxy interface.
 pub type ImageAsset = RCHandle<skresources_ImageAsset>;
 require_base_type!(skresources_ImageAsset, SkRefCnt);
 
@@ -16,12 +18,15 @@ impl NativeRefCountedBase for skresources_ImageAsset {
 }
 
 impl ImageAsset {
+    /// Returns `true` if the image asset is animated.
     pub fn is_multi_frame(&self) -> bool {
         unsafe { sb::C_ImageAsset_isMultiFrame(self.native_mut_force()) }
     }
 
     // TODO: wrap getFrameData()
 
+    /// Create a multi-frame image asset from the given encoded data. Clients must register the
+    /// required decoding image codecs before calling this.
     pub fn from_data(
         data: impl Into<Data>,
         decode_strategy: impl Into<Option<ImageDecodeStrategy>>,
@@ -38,14 +43,25 @@ impl ImageAsset {
     // TODO: Wrapping Make(SkCodec) requires us to put a lifetime on the ImageAsset.
 }
 
+/// Strategy for how images are decoded.
+///
+/// Variants:
+/// - [`ImageDecodeStrategy::LazyDecode`]: Images are decoded on-the-fly, at rasterization time. Large images may cause jank as decoding is expensive (and can thrash internal caches).
+/// - [`ImageDecodeStrategy::PreDecode`]: Force-decode all images upfront, at the cost of potentially more RAM and slower animation build times.
 pub use sb::skresources_ImageDecodeStrategy as ImageDecodeStrategy;
 variant_name!(ImageDecodeStrategy::LazyDecode);
 
 // TODO: Wrap ExternalTrackAsset
 
+/// ResourceProvider is an interface that lets rich-content modules defer loading of external
+/// resources (images, fonts, etc.) to embedding clients.
 pub trait ResourceProvider {
+    /// Load a generic resource (currently only nested animations) specified by `resource_path` +
+    /// `resource_name`, and return as a [`Data`].
     fn load(&self, resource_path: &str, resource_name: &str) -> Option<Data>;
 
+    /// Load an image asset specified by `resource_path` + `resource_name`, and returns the
+    /// corresponding [`ImageAsset`] proxy.
     fn load_image_asset(
         &self,
         resource_path: &str,
@@ -56,9 +72,13 @@ pub trait ResourceProvider {
         ImageAsset::from_data(data, None)
     }
 
+    /// Load an external font and return as a [`Typeface`].
+    ///
+    /// - `name` font name
+    /// - `url` web font URL
     fn load_typeface(&self, name: &str, url: &str) -> Option<Typeface>;
 
-    /// This is used in the SVG Dom and _should_ be used for implementing load_typeface().
+    /// This is used in the SVG Dom and _should_ be used for implementing `load_typeface()`.
     fn font_mgr(&self) -> FontMgr;
 }
 

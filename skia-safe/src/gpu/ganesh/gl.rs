@@ -1,3 +1,6 @@
+//! The OpenGL backend for Ganesh: GL types, extensions, the [`crate::gpu::gl::Interface`]
+//! function-pointer interface, and surface/context construction helpers.
+
 mod backend_surface;
 mod direct_context;
 pub mod extensions;

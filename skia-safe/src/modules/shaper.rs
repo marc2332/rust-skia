@@ -1,3 +1,4 @@
+//! Script-aware text shaping via Skia's `SkShaper`, producing [`crate::TextBlob`]s (see [`crate::Shaper`]).
 use std::{
     ffi::{CStr, CString},
     fmt,
@@ -14,7 +15,7 @@ use skia_bindings::{
 use crate::{Font, FontMgr, FourByteTag, Point, TextBlob, prelude::*, scalar};
 
 // The following three are re-exported in `modules.rs` via `mod shapers {}`.
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "visionos"))]
 pub(crate) mod core_text;
 pub(crate) mod harfbuzz;
 pub(crate) mod unicode;
@@ -72,7 +73,7 @@ impl Shaper {
         unsafe { sb::SkShaper_PurgeHarfBuzzCache() }
     }
 
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_os = "visionos"))]
     pub fn new_core_text(line_break_mode: crate::shapers::ct::LineBreakMode) -> Self {
         #[cfg(feature = "embed-icudtl")]
         crate::icu::init();
@@ -95,8 +96,11 @@ impl Shaper {
 pub use skia_bindings::SkShaper_Feature as Feature;
 
 pub trait RunIterator {
+    /// Set state to that of current run and move iterator to end of that run.
     fn consume(&mut self);
+    /// Offset to one past the last (utf8) element in the current run.
     fn end_of_current_run(&self) -> usize;
+    /// Return true if [`RunIterator::consume()`] should no longer be called.
     fn at_end(&self) -> bool;
 }
 
@@ -193,6 +197,7 @@ impl fmt::Debug for BiDiRunIterator {
 }
 
 impl BiDiRunIterator {
+    /// The unicode bidi embedding level (even ltr, odd rtl).
     pub fn current_level(&self) -> u8 {
         unsafe { sb::C_SkShaper_BiDiRunIterator_currentLevel(self.native()) }
     }
@@ -243,6 +248,7 @@ impl fmt::Debug for ScriptRunIterator {
 }
 
 impl ScriptRunIterator {
+    /// Should be ISO 15924 codes.
     pub fn current_script(&self) -> FourByteTag {
         FourByteTag::from_native_c(unsafe {
             sb::C_SkShaper_ScriptRunIterator_currentScript(self.native())
@@ -303,6 +309,7 @@ impl fmt::Debug for LanguageRunIterator {
 }
 
 impl LanguageRunIterator {
+    /// Should be BCP-47; C locale names may also work.
     pub fn current_language(&self) -> &CStr {
         unsafe {
             CStr::from_ptr(sb::C_SkShaper_LanguageRunIterator_currentLanguage(
@@ -335,6 +342,7 @@ impl Shaper {
 }
 
 pub mod run_handler {
+    //! Callback interface that receives shaped runs (glyphs, positions, and advances) as text is shaped.
     use std::{ffi::CStr, ops::Range, slice};
 
     use skia_bindings::{SkShaper_RunHandler_Buffer, SkShaper_RunHandler_RunInfo};
@@ -342,11 +350,17 @@ pub mod run_handler {
     use crate::{Font, FourByteTag, GlyphId, Point, Vector, prelude::*};
 
     pub trait RunHandler {
+        /// Called when beginning a line.
         fn begin_line(&mut self);
+        /// Called once for each run in a line. Can compute baselines and offsets.
         fn run_info(&mut self, info: &RunInfo);
+        /// Called after all [`RunHandler::run_info()`] calls for a line.
         fn commit_run_info(&mut self);
+        /// Called for each run in a line after [`RunHandler::commit_run_info()`]. The buffer will be filled out.
         fn run_buffer(&mut self, info: &RunInfo) -> Buffer;
+        /// Called after each [`RunHandler::run_buffer()`] is filled out.
         fn commit_run_buffer(&mut self, info: &RunInfo);
+        /// Called when ending a line.
         fn commit_line(&mut self);
     }
 
@@ -384,10 +398,15 @@ pub mod run_handler {
 
     #[derive(Debug)]
     pub struct Buffer<'a> {
+        /// Required glyphs.
         pub glyphs: &'a mut [GlyphId],
+        /// Required positions. If [`Buffer::offsets`] is `None`, put `glyphs[i]` at `positions[i]`.
         pub positions: &'a mut [Point],
+        /// Optional offsets. If present, put `glyphs[i]` at `positions[i] + offsets[i]`.
         pub offsets: Option<&'a mut [Point]>,
+        /// Optional UTF-8 clusters. `clusters[i]` starts the run that produced `glyphs[i]`.
         pub clusters: Option<&'a mut [u32]>,
+        /// Offset to add to all positions.
         pub point: Point,
     }
 
@@ -640,10 +659,10 @@ mod rust_run_handler {
     }
 }
 
+/// Helper for shaping text directly into a [`TextBlob`].
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct TextBlobBuilderRunHandler<'text>(SkTextBlobBuilderRunHandler, PhantomData<&'text str>);
-
 impl NativeAccess for TextBlobBuilderRunHandler<'_> {
     type Native = SkTextBlobBuilderRunHandler;
 
@@ -759,6 +778,7 @@ pub(crate) mod shapers {
     }
 
     pub mod primitive {
+        //! A trivial text shaper and run iterators that do not depend on external shaping libraries.
         use skia_bindings as sb;
 
         use crate::shaper::{BiDiRunIterator, ScriptRunIterator, Shaper};
@@ -784,6 +804,7 @@ pub(crate) mod shapers {
 }
 
 pub mod icu {
+    //! Initialization support for International Components for Unicode (ICU), required by some text shapers.
     /// On Windows, and if the default feature "embed-icudtl" is _not_ set, this function writes the
     /// file `icudtl.dat` into the current executable's directory making sure that it's available
     /// when text shaping is used in Skia.

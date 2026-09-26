@@ -1,3 +1,6 @@
+//! Utilities for working with the orientation of encoded images, e.g. applying an
+//! [`crate::EncodedOrigin`] to a [`crate::Pixmap`].
+
 use crate::{EncodedOrigin, ImageInfo, Pixmap, prelude::*};
 use skia_bindings as sb;
 

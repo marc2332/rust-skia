@@ -28,7 +28,7 @@ impl BackendContext {
     /// Unsafe because it expects various objects in form of `c_void` pointers.
     ///
     /// This function retains all the non-`null` handles passed to it and releases them as soon the
-    /// [BackendContext] is dropped.
+    /// [`BackendContext`] is dropped.
     pub unsafe fn new(device: Handle, queue: Handle) -> Self {
         BackendContext::construct(|bc| unsafe {
             sb::C_GrMtlBackendContext_Construct(bc, device, queue)

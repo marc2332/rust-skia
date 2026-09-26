@@ -23,7 +23,7 @@ impl fmt::Debug for Strings {
 }
 
 impl Handle<SkStrings> {
-    /// Constructs a native Strings array from a slice of SkStrings by moving them.
+    /// Constructs a native `Strings` array from a slice of Rust `String`s by moving them.
     pub fn new(mut strings: Vec<String>) -> Self {
         Strings::construct(|s| unsafe {
             sb::C_SkStrings_construct(s, strings.native_mut().as_mut_ptr(), strings.len())

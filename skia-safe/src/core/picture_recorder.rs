@@ -1,3 +1,5 @@
+//! Records drawing commands into a [`crate::Picture`] via a [`crate::Canvas`].
+
 use crate::{Canvas, Drawable, Picture, Rect, prelude::*};
 use skia_bindings::{self as sb, SkPictureRecorder, SkRect};
 use std::{fmt, ptr};
@@ -23,6 +25,11 @@ impl PictureRecorder {
         Self::construct(|pr| unsafe { sb::C_SkPictureRecorder_Construct(pr) })
     }
 
+    /// Returns the canvas that records the drawing commands.
+    ///
+    /// - `bounds` the cull rect used when recording this picture. Any drawing that falls outside
+    ///   of this rect is undefined, and may be drawn or it may not
+    /// - `use_bbh` whether to use a bounding box hierarchy
     pub fn begin_recording(&mut self, bounds: impl AsRef<Rect>, use_bbh: bool) -> &Canvas {
         let canvas_ref = unsafe {
             &*sb::C_SkPictureRecorder_beginRecording(
@@ -35,6 +42,8 @@ impl PictureRecorder {
         Canvas::borrow_from_native(canvas_ref)
     }
 
+    /// Returns the recording canvas if one is active, or `None` if recording is not active. This
+    /// does not alter the ref count on the canvas (if present).
     pub fn recording_canvas(&mut self) -> Option<&Canvas> {
         let canvas = unsafe { self.native_mut().getRecordingCanvas() };
         if canvas.is_null() {
@@ -43,6 +52,15 @@ impl PictureRecorder {
         Some(Canvas::borrow_from_native(unsafe { &*canvas }))
     }
 
+    /// Signals that the caller is done recording. This invalidates the canvas returned by
+    /// [`Self::begin_recording()`] or [`Self::recording_canvas()`].
+    ///
+    /// The returned picture is immutable. If during recording drawables were added to the canvas,
+    /// these will have been "drawn" into a recording canvas, so that this resulting picture will
+    /// reflect their current state, but will not contain a live reference to the drawables
+    /// themselves.
+    ///
+    /// - `cull_rect` optional cull rectangle
     pub fn finish_recording_as_picture(&mut self, cull_rect: Option<&Rect>) -> Option<Picture> {
         self.recording_canvas()?;
         let cull_rect_ptr: *const SkRect =
@@ -55,6 +73,13 @@ impl PictureRecorder {
         Picture::from_ptr(picture_ptr)
     }
 
+    /// Signals that the caller is done recording. This invalidates the canvas returned by
+    /// [`Self::begin_recording()`] or [`Self::recording_canvas()`].
+    ///
+    /// Unlike [`Self::finish_recording_as_picture()`], which returns an immutable picture, the
+    /// returned drawable may contain live references to other drawables (if they were added to the
+    /// recording canvas) and therefore this drawable will reflect the current state of those nested
+    /// drawables anytime it is drawn or a new picture is snapped from it.
     pub fn finish_recording_as_drawable(&mut self) -> Option<Drawable> {
         self.recording_canvas()?;
         Drawable::from_ptr(unsafe {

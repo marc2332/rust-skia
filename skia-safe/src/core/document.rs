@@ -1,3 +1,6 @@
+//! High-level API for creating a document-based [`crate::Canvas`], e.g. for PDF output; pages are
+//! created with [`crate::Document::begin_page()`].
+
 use std::{fmt, ptr};
 
 use skia_bindings::{self as sb, SkDocument, SkRefCntBase};
@@ -27,6 +30,8 @@ impl<State: fmt::Debug> fmt::Debug for Document<'_, State> {
 }
 
 pub mod state {
+    //! The state of a [`crate::Document`]: [`Open`] while pages may be added, [`OnPage`] while a
+    //! page is being drawn onto.
     use std::{fmt, ptr};
 
     use skia_bindings::SkCanvas;

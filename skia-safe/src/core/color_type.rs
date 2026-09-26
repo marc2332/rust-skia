@@ -18,7 +18,7 @@ use skia_bindings as sb;
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 #[repr(i32)]
 pub enum ColorType {
-    /// Unknown or unrepresentable as an SkColorType.
+    /// Unknown or unrepresentable as a [`ColorType`].
     Unknown = SkColorType::kUnknown_SkColorType as _,
     /// Single channel data (8-bit) interpreted as an alpha value. RGB are 0.
     /// Bits: [A:7..0]

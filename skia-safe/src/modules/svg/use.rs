@@ -1,3 +1,6 @@
+//! Implements support for `<use>` (reference) elements.
+//! (<https://www.w3.org/TR/SVG11/struct.html#UseElement>)
+
 use super::{DebugAttributes, Iri, Length, NodeSubtype};
 use crate::{impl_default_make, prelude::*};
 use skia_bindings as sb;

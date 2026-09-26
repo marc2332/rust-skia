@@ -5,25 +5,47 @@ use crate::gpu::GpuStatsFlags;
 use crate::prelude::NativeSliceAccess;
 use skia_bindings as sb;
 
+/// Possible 3D APIs that may be used by Ganesh.
 pub use skia_bindings::GrBackendApi as BackendApi;
-variant_name!(BackendAPI::OpenGL);
+variant_name!(BackendApi::OpenGL);
 
 #[deprecated(since = "0.80.0", note = "use BackendApi")]
 pub use BackendApi as BackendAPI;
 
+/// Legacy constant for [`BackendApi::Metal`].
 pub const METAL_BACKEND: BackendApi = BackendApi::Metal;
+/// Legacy constant for [`BackendApi::Vulkan`].
 pub const VULKAN_BACKEND: BackendApi = BackendApi::Vulkan;
+/// Legacy constant for [`BackendApi::Mock`].
 pub const MOCK_BACKEND: BackendApi = BackendApi::Mock;
 
+/// Is a texture renderable or not
 pub use gpu::Renderable;
 
+/// Is the data protected on the GPU or not.
 pub use gpu::Protected;
 
+/// GPU [`crate::Image`] and [`crate::Surface`]s can be stored such that (0, 0) in texture space
+/// may correspond to either the top-left or bottom-left content pixel.
 pub use skia_bindings::GrSurfaceOrigin as SurfaceOrigin;
 variant_name!(SurfaceOrigin::BottomLeft);
 
 // Note: BackendState is in gl/types.rs/
 
+/// Struct to supply options to flush calls.
+///
+/// After issuing all commands, the semaphores set via [`FlushInfo::set_signal_semaphores()`]
+/// will be signaled by the gpu. The client passes in an array of
+/// [`crate::gpu::BackendSemaphore`]s. In general these can be either initialized or not. If they
+/// are initialized, the backend uses the passed in semaphore. If it is not initialized, a new
+/// semaphore is created and the [`crate::gpu::BackendSemaphore`] object is initialized with
+/// that semaphore. The semaphores are not sent to the GPU until the next submit call is made.
+/// See [`crate::gpu::DirectContext::submit()`] for more information.
+///
+/// The client will own and be responsible for deleting the underlying semaphores that are
+/// stored and returned in initialized [`crate::gpu::BackendSemaphore`] objects. The
+/// [`crate::gpu::BackendSemaphore`] objects themselves can be deleted as soon as the flush
+/// call returns.
 #[repr(C)]
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -78,6 +100,9 @@ impl FlushInfo {
     }
 }
 
+/// Enum used as return value when flush is called with semaphores so the client knows whether
+/// the valid semaphores will be submitted on the next [`crate::gpu::DirectContext::submit()`]
+/// call.
 pub use sb::GrSemaphoresSubmitted as SemaphoresSubmitted;
 variant_name!(SemaphoresSubmitted::Yes);
 
@@ -90,11 +115,19 @@ variant_name!(SyncCpu::Yes);
 pub use sb::GrMarkFrameBoundary as MarkFrameBoundary;
 variant_name!(MarkFrameBoundary::Yes);
 
+/// Options passed to [`crate::gpu::DirectContext::submit()`].
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct SubmitInfo {
+    /// If [`SyncCpu::Yes`], submit will return once the gpu has finished with all submitted
+    /// work.
     pub sync: SyncCpu,
+    /// If [`MarkFrameBoundary::Yes`] and the GPU supports a way to be notified about frame
+    /// boundaries, the GPU will be notified about the frame boundary during/after the
+    /// submission of work.
     pub mark_boundary: MarkFrameBoundary,
+    /// A frame ID that is passed to the GPU when marking a boundary. Ideally this value should
+    /// be unique for each frame.
     pub frame_id: u64,
 }
 native_transmutable!(sb::GrSubmitInfo, SubmitInfo);

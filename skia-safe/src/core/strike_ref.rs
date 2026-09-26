@@ -42,8 +42,8 @@ impl StrikeRef {
     ///
     /// `widths` receives `min(widths.len(), glyphs.len())` values.
     ///
-    /// - `glyphs`: array of glyph indices to be measured
-    /// - `widths`: returns text advances for each glyph, in font units
+    /// - `glyphs` array of glyph indices to be measured
+    /// - `widths` returns text advances for each glyph, in font units
     pub fn get_widths(&self, glyphs: &[GlyphId], widths: &mut [scalar]) {
         assert_eq!(glyphs.len(), widths.len());
         unsafe {
@@ -59,7 +59,7 @@ impl StrikeRef {
 
     /// Retrieves the advance width for a single glyph.
     ///
-    /// - `glyph`: glyph index to be measured
+    /// - `glyph` glyph index to be measured
     ///
     /// Returns advance width in font units.
     pub fn get_width(&self, glyph: GlyphId) -> scalar {
@@ -69,12 +69,12 @@ impl StrikeRef {
     /// Retrieves the advance widths for each glyph, handling arbitrary strides for both input
     /// glyphs and output advances.
     ///
-    /// - `count`: number of glyphs to measure
-    /// - `glyphs`: slice containing the first glyph ID, glyph is 32-bit, instead of [`GlyphId`], in
+    /// - `count` number of glyphs to measure
+    /// - `glyphs` slice containing the first glyph ID, glyph is 32-bit, instead of [`GlyphId`], in
     ///   preparation for large glyph ids.
-    /// - `glyph_stride_32`: stride in 32-bit words between input glyph IDs
-    /// - `advances`: slice containing the first output advance
-    /// - `advance_stride_32`: stride in 32-bit words between output advances
+    /// - `glyph_stride_32` stride in 32-bit words between input glyph IDs
+    /// - `advances` slice containing the first output advance
+    /// - `advance_stride_32` stride in 32-bit words between output advances
     pub fn get_widths_strided(
         &self,
         count: usize,
@@ -123,9 +123,9 @@ impl StrikeRef {
     /// `widths` receives `min(widths.len(), glyphs.len())` values.
     /// `bounds` receives `min(bounds.len(), glyphs.len())` values.
     ///
-    /// - `glyphs`: array of glyph indices to be measured
-    /// - `widths`: returns text advances for each glyph
-    /// - `bounds`: returns bounds for each glyph relative to `(0, 0)`
+    /// - `glyphs` array of glyph indices to be measured
+    /// - `widths` returns text advances for each glyph
+    /// - `bounds` returns bounds for each glyph relative to `(0, 0)`
     pub fn get_widths_bounds(
         &self,
         glyphs: &[GlyphId],

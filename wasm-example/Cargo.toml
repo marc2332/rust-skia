@@ -9,5 +9,6 @@ edition = "2024"
 default = ["skia-safe/gl"]
 
 [dependencies]
-skia-safe = { path = "../skia-safe" }
+skia-safe = { package = "freya-skia-safe", path = "../skia-safe" }
+skia-icon = { path = "../skia-icon" }
 gl = "0.14.0"

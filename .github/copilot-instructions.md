@@ -6,6 +6,7 @@ Update it whenever you learn something new about the project's patterns, convent
 ## Project
 - Follow the existing project structure and idioms.
 - Prefer small, self-contained changes unless explicitly asked for broader refactors.
+- Update generated GitHub workflows through `mk-workflows`, then run `make workflows`; do not edit generated workflow YAML directly.
 - For targeted ports (for example, "add missing bindings"), keep diffs strictly scoped to the missing API surface.
 - Do not refactor adjacent working code unless it is required for correctness, compatibility, or explicitly requested.
 
@@ -40,6 +41,8 @@ Update it whenever you learn something new about the project's patterns, convent
 ## Skills
 The following is the complete list of workspace skills:
 - [`cpp-to-rust-documentation`](skills/cpp-to-rust-documentation/SKILL.md): use when porting documentation from Skia C++ headers to Rust APIs.
+- [`rust-skia-release-publishing`](skills/rust-skia-release-publishing/SKILL.md): use when publishing a previously verified rust-skia release to crates.io and GitHub.
+- [`rust-skia-release-verification`](skills/rust-skia-release-verification/SKILL.md): use when verifying release commits, CI, artifacts, images, packaging, and notes before publication.
 - [`skia-milestone-update`](skills/skia-milestone-update/SKILL.md): use when updating Skia to a milestone or refreshing the current milestone from its upstream `chrome/mXX` branch.
 
 ## Documentation

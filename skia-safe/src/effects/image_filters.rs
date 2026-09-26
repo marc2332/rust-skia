@@ -1,3 +1,6 @@
+//! Factory functions for creating [`crate::ImageFilter`]s. For filters that take an input
+//! filter, `None` means the dynamic source image is used.
+
 use std::ptr;
 
 use skia_bindings::{self as sb, SkImageFilter, SkRect};
@@ -16,8 +19,10 @@ use crate::{
 pub struct CropRect(Option<Rect>);
 
 impl CropRect {
+    /// An empty crop rect, equivalent to `None` — the factory does not crop.
     pub const NO_CROP_RECT: CropRect = CropRect(None);
 
+    /// The crop rectangle, or `None` if no crop is set.
     pub fn rect(&self) -> Option<Rect> {
         self.0
     }
@@ -150,6 +155,11 @@ pub fn blur(
     })
 }
 
+/// Create a filter that applies the color filter to the input filter results.
+///
+/// - `cf` the color filter that transforms the input image
+/// - `input` the input filter, or the source bitmap if this is `None`
+/// - `crop_rect` optional rectangle that crops the input and output
 pub fn color_filter(
     cf: impl Into<ColorFilter>,
     input: impl Into<Option<ImageFilter>>,
@@ -486,22 +496,63 @@ pub fn picture<'a>(
     })
 }
 
+/// Create a filter that evaluates a [`crate::RuntimeEffect`] child shader for each pixel,
+/// binding it
+/// to `input`. The equivalent to [`runtime_shader_with_options()`] with a sample radius of 0.
+/// See that function for details.
 pub fn runtime_shader(
     builder: &RuntimeShaderBuilder,
     child_shader_name: impl AsRef<str>,
     input: impl Into<Option<ImageFilter>>,
 ) -> Option<ImageFilter> {
+    runtime_shader_with_options(builder, 0.0, child_shader_name, input, false)
+}
+
+/// Creates a runtime-shader image filter and optionally restricts its output to its input bounds.
+///
+/// Set `restrict_output_to_input_bounds` only when the shader evaluates to transparent black
+/// wherever its child shader does. This allows downstream filters to retain finite content bounds.
+pub fn runtime_shader_with_output_bounds(
+    builder: &RuntimeShaderBuilder,
+    child_shader_name: impl AsRef<str>,
+    input: impl Into<Option<ImageFilter>>,
+    restrict_output_to_input_bounds: bool,
+) -> Option<ImageFilter> {
+    runtime_shader_with_options(
+        builder,
+        0.0,
+        child_shader_name,
+        input,
+        restrict_output_to_input_bounds,
+    )
+}
+
+/// Creates a runtime-shader image filter with a child-shader sampling radius and optionally
+/// restricts its output to its input bounds.
+///
+/// `sample_radius` is the maximum absolute offset in either axis between coordinates passed to the
+/// runtime shader and coordinates used to sample its child shader.
+pub fn runtime_shader_with_options(
+    builder: &RuntimeShaderBuilder,
+    sample_radius: scalar,
+    child_shader_name: impl AsRef<str>,
+    input: impl Into<Option<ImageFilter>>,
+    restrict_output_to_input_bounds: bool,
+) -> Option<ImageFilter> {
     let child_shader_name = child_shader_name.as_ref();
     unsafe {
         ImageFilter::from_ptr(sb::C_SkImageFilters_RuntimeShader(
             builder.native() as *const _,
+            sample_radius,
             child_shader_name.as_ptr() as *const _,
             child_shader_name.len(),
             input.into().into_ptr_or_null(),
+            restrict_output_to_input_bounds,
         ))
     }
 }
 
+/// Whether [`shader()`] output should be dithered.
 pub use skia_bindings::SkImageFilters_Dither as Dither;
 
 use super::runtime_effect::RuntimeShaderBuilder;
@@ -520,6 +571,7 @@ pub fn shader(shader: impl Into<Shader>, crop_rect: impl Into<CropRect>) -> Opti
     shader_with_dither(shader, Dither::No, crop_rect)
 }
 
+/// Same as [`shader()`], but with an explicit `dither` setting.
 pub fn shader_with_dither(
     shader: impl Into<Shader>,
     dither: Dither,
@@ -1101,6 +1153,8 @@ impl ImageFilter {
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
+/// The inputs of [`arithmetic()`] packed into a struct: the four coefficients and whether the
+/// RGB channels are clamped to the calculated alpha.
 pub struct ArithmeticFPInputs {
     pub k: [f32; 4],
     pub enforce_pm_color: bool,
@@ -1116,6 +1170,8 @@ impl From<([f32; 4], bool)> for ArithmeticFPInputs {
 }
 
 impl ArithmeticFPInputs {
+    /// Creates inputs from the four arithmetic coefficients `k0`..`k3` (see [`arithmetic()`])
+    /// and the `enforce_pm_color` setting.
     pub fn new(k0: f32, k1: f32, k2: f32, k3: f32, enforce_pm_color: bool) -> Self {
         Self {
             k: [k0, k1, k2, k3],
@@ -1125,6 +1181,7 @@ impl ArithmeticFPInputs {
 }
 
 impl Picture {
+    /// Returns the picture as an image filter, without consuming the picture.
     pub fn as_image_filter<'a>(
         &self,
         crop_rect: impl Into<Option<&'a Rect>>,
@@ -1132,6 +1189,7 @@ impl Picture {
         self.clone().into_image_filter(crop_rect)
     }
 
+    /// Consumes the picture and returns it as an image filter.
     pub fn into_image_filter<'a>(
         self,
         crop_rect: impl Into<Option<&'a Rect>>,

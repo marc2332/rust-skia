@@ -27,14 +27,17 @@ impl ISize {
         *self = Self::new(w, h);
     }
 
+    /// Returns true iff `width == 0 && height == 0`.
     pub fn is_zero(self) -> bool {
         self.width == 0 && self.height == 0
     }
 
+    /// Returns true if either width or height are `<= 0`.
     pub fn is_empty(self) -> bool {
         self.width <= 0 || self.height <= 0
     }
 
+    /// Sets the width and height to `0`.
     pub fn set_empty(&mut self) {
         *self = Self::new_empty();
     }
@@ -79,14 +82,17 @@ impl Size {
         *self = Self::new(w, h);
     }
 
+    /// Returns true iff `width == 0 && height == 0`.
     pub fn is_zero(self) -> bool {
         self.width == 0.0 && self.height == 0.0
     }
 
+    /// Returns true if either width or height are `<= 0`.
     pub fn is_empty(self) -> bool {
         self.width <= 0.0 || self.height <= 0.0
     }
 
+    /// Sets the width and height to `0`.
     pub fn set_empty(&mut self) {
         *self = Self::new_empty()
     }

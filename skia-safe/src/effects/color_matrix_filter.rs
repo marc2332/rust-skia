@@ -1,3 +1,5 @@
+//! Deprecated color filter factory functions, use [`crate::color_filters::lighting()`] instead.
+
 use crate::{Color, ColorFilter, color_filters};
 
 impl ColorFilter {

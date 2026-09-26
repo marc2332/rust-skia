@@ -1,4 +1,5 @@
 pub mod pdf {
+    //! Generating PDF (Portable Document Format) output via Skia's PDF backend (see [`crate::Document`]).
     use std::{ffi::CString, fmt, io, marker::PhantomData, mem, ptr};
 
     use skia_bindings::{
@@ -474,6 +475,7 @@ pub mod pdf {
     }
 
     pub mod node_id {
+        //! Constants identifying nodes in the PDF structure tree, used for tagged and accessible PDF output.
         pub const NOTHING: i32 = 0;
         pub const OTHER_ARTIFACT: i32 = -1;
         pub const PAGINATION_ARTIFACT: i32 = -2;

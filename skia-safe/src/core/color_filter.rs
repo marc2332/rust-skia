@@ -1,3 +1,6 @@
+//! An optional object in the drawing pipeline: when present in a [`crate::Paint`], it is called
+//! with the source colors and returns new colors, which are then passed on to the next stage.
+
 use crate::{BlendMode, Color, Color4f, ColorSpace, NativeFlattenable, prelude::*, scalar};
 use skia_bindings::{self as sb, SkColorFilter, SkFlattenable, SkRefCntBase};
 use std::fmt;
@@ -108,6 +111,8 @@ impl ColorFilter {
 }
 
 pub mod color_filters {
+    //! Factory functions for creating [`crate::ColorFilter`]s, e.g. from a color matrix, a
+    //! [`crate::BlendMode`], or a [`crate::ColorTable`].
     use crate::{BlendMode, Color, ColorFilter, ColorMatrix, scalar};
     use crate::{Color4f, ColorSpace, ColorTable, prelude::*};
     use skia_bindings as sb;

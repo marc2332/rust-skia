@@ -1,3 +1,9 @@
+//! Collects an order list of other font managers, and visits them in order
+//! when a request to find or match is issued.
+//!
+//! Note: this explicitly fails on any attempt to make a typeface: all of
+//! those requests will return `None`.
+
 use std::{fmt, mem::transmute, ops::Deref};
 
 use crate::{FontMgr, prelude::*};

@@ -185,6 +185,7 @@ pub mod named_primaries {
 
 // TODO: Make the binding generator provide all these constants.
 pub mod named_transfer_fn {
+    //! Named [`crate::ColorSpaceTransferFn`] constants for common transfer functions.
     use crate::ColorSpaceTransferFn;
     use skia_bindings::SkNamedTransferFn_CicpId;
 
@@ -376,20 +377,39 @@ impl fmt::Debug for ColorSpace {
 }
 
 impl ColorSpace {
+    /// Creates the sRGB color space.
     pub fn new_srgb() -> Self {
         Self::from_ptr(unsafe { sb::C_SkColorSpace_MakeSRGB() }).unwrap()
     }
 
+    /// Creates a color space with the sRGB primaries, but a linear (1.0) gamma.
     pub fn new_srgb_linear() -> Self {
         Self::from_ptr(unsafe { sb::C_SkColorSpace_MakeSRGBLinear() }).unwrap()
     }
 
+    /// Creates a [`ColorSpace`] from a parsed (skcms) ICC profile. Returns `None` if `data` is not
+    /// a valid ICC profile.
+    ///
+    /// - `data` the ICC profile bytes
     pub fn new_icc(data: &[u8]) -> Option<Self> {
         Self::from_ptr(unsafe { sb::C_SkColorSpace_MakeICC(data.as_ptr() as _, data.len()) })
     }
 
     // TODO: makeRGB
 
+    /// Creates a [`ColorSpace`] from code points specified in Rec. ITU-T H.273. Returns `None` for
+    /// an invalid or unsupported combination of code points.
+    ///
+    /// - `primaries` identifies an entry in Rec. ITU-T H.273, Table 2
+    /// - `transfer_characteristics` identifies an entry in Rec. ITU-T H.273, Table 3
+    ///
+    /// [`ColorSpace`] (and the underlying `skcms_ICCProfile`) only supports RGB color spaces and
+    /// therefore this function does not take a `matrix_coefficients` parameter; the caller is
+    /// expected to verify that `matrix_coefficients` is `0`.
+    ///
+    /// Narrow range images are extremely rare, so this function does not take a
+    /// `video_full_range_flag`; the caller is expected to verify that it is `1` (indicating a full
+    /// range image).
     pub fn new_cicp(
         primaries: named_primaries::CicpId,
         transfer_characteristics: named_transfer_fn::CicpId,
@@ -397,29 +417,48 @@ impl ColorSpace {
         Self::from_ptr(unsafe { sb::C_SkColorSpace_MakeCICP(primaries, transfer_characteristics) })
     }
 
+    /// Returns a hash of the gamut transformation to XYZ D50. Allows for fast equality checking of
+    /// gamuts, at the (very small) risk of collision.
     pub fn to_xyzd50_hash(&self) -> XYZD50Hash {
         XYZD50Hash(self.native().fToXYZD50Hash)
     }
 
+    /// Returns a color space with the same gamut as this one, but with a linear gamma.
     #[must_use]
     pub fn with_linear_gamma(&self) -> Self {
         Self::from_ptr(unsafe { sb::C_SkColorSpace_makeLinearGamma(self.native()) }).unwrap()
     }
 
+    /// Returns a color space with the same gamut as this one, but with the sRGB transfer function.
     #[must_use]
     pub fn with_srgb_gamma(&self) -> Self {
         Self::from_ptr(unsafe { sb::C_SkColorSpace_makeSRGBGamma(self.native()) }).unwrap()
     }
 
+    /// Returns a color space with the same transfer function as this one, but with the primary
+    /// colors rotated. In other words, this produces a new color space that maps RGB to GBR (when
+    /// applied to a source), and maps RGB to BRG (when applied to a destination).
+    ///
+    /// This is used for testing, to construct color spaces that have severe and testable behavior.
     #[must_use]
     pub fn with_color_spin(&self) -> Self {
         Self::from_ptr(unsafe { sb::C_SkColorSpace_makeColorSpin(self.native()) }).unwrap()
     }
 
+    /// Returns true if the color space is sRGB. Returns false otherwise.
+    ///
+    /// This allows a little bit of tolerance, given that we might see small numerical error in
+    /// some cases: converting ICC fixed point to float, converting white point to D50, rounding
+    /// decisions on transfer function and matrix.
+    ///
+    /// This does not consider a 2.2f exponential transfer function to be sRGB. While these
+    /// functions are similar (and it is sometimes useful to consider them together), this function
+    /// checks for logical equality.
     pub fn is_srgb(&self) -> bool {
         unsafe { self.native().isSRGB() }
     }
 
+    /// Returns a serialized representation of this color space.
     pub fn serialize(&self) -> Data {
         Data::from_ptr(unsafe { sb::C_SkColorSpace_serialize(self.native()) }).unwrap()
     }

@@ -1,4 +1,5 @@
 pub mod backend_formats {
+    //! Metal-specific helpers for constructing and querying [`crate::gpu::BackendFormat`].
     use skia_bindings as sb;
 
     use crate::{
@@ -19,6 +20,7 @@ pub mod backend_formats {
 }
 
 pub mod backend_textures {
+    //! Metal-specific helpers for constructing and querying [`crate::gpu::BackendTexture`].
     use skia_bindings as sb;
 
     use crate::{
@@ -57,6 +59,7 @@ pub mod backend_textures {
 }
 
 pub mod backend_render_targets {
+    //! Metal-specific helpers for constructing and querying [`crate::gpu::BackendRenderTarget`].
     use skia_bindings as sb;
 
     use crate::{

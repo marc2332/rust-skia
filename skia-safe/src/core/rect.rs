@@ -264,6 +264,17 @@ impl IRect {
         (!r.is_empty()).then_some(r)
     }
 
+    /// Returns the union of `a` and `b`.
+    ///
+    /// Has no effect if `b` is empty. Otherwise, if `a` is empty, returns `b`.
+    ///
+    /// The C++ mutating variant `join(const SkIRect&)` is not wrapped; this static version
+    /// returns a new rectangle instead.
+    ///
+    /// - `a` rectangle to join
+    /// - `b` expansion rectangle
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@IRect_join_2>
     pub fn join(a: &Self, b: &Self) -> Self {
         let mut copied = *a;
         unsafe { copied.native_mut().join(b.native()) }
@@ -550,12 +561,29 @@ impl Rect {
         self.set_bounds_check(points);
     }
 
+    /// Sets to the bounds of the span of points, and returns true (if all point values were
+    /// finite).
+    ///
+    /// If the span is empty, sets the rect to empty and returns true. If any point contains an
+    /// infinity or NaN, sets the rect to empty and returns false.
+    ///
+    /// - `points` point span
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Rect_setBoundsCheck>
     pub fn set_bounds_check(&mut self, points: &[Point]) -> bool {
         unsafe {
             sb::C_SkRect_setBoundsCheck(self.native_mut(), points.native().as_ptr(), points.len())
         }
     }
 
+    /// Sets to the bounds of the span of points.
+    ///
+    /// If the span is empty, sets the rect to empty. If any point contains an infinity or NaN,
+    /// sets the rect to NaN.
+    ///
+    /// - `points` point span
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Rect_setBoundsNoCheck>
     pub fn set_bounds_no_check(&mut self, points: &[Point]) {
         unsafe {
             sb::C_SkRect_setBoundsNoCheck(self.native_mut(), points.native().as_ptr(), points.len())
@@ -642,6 +670,15 @@ impl Rect {
         *self = self.with_outset(d)
     }
 
+    /// Returns true if this rectangle intersects `r`, and sets this rectangle to the
+    /// intersection. Returns false if this rectangle does not intersect `r`, and leaves this
+    /// rectangle unchanged.
+    ///
+    /// Returns false if either `r` or this rectangle is empty, leaving this rectangle unchanged.
+    ///
+    /// - `r` limit of result
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Rect_intersect>
     pub fn intersect(&mut self, r: impl AsRef<Rect>) -> bool {
         unsafe { self.native_mut().intersect(r.as_ref().native()) }
     }
@@ -681,6 +718,14 @@ impl Rect {
         l < r && t < b
     }
 
+    /// Sets this rectangle to the union of itself and `r`.
+    ///
+    /// Has no effect if `r` is empty. Otherwise, if this rectangle is empty, sets this rectangle
+    /// to `r`.
+    ///
+    /// - `r` expansion rectangle
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Rect_join_2>
     pub fn join(&mut self, r: impl AsRef<Rect>) {
         let r = r.as_ref();
         unsafe { self.native_mut().join(r.native()) }
@@ -752,6 +797,12 @@ impl Rect {
         unsafe { transmute_ref(&self.left) }
     }
 
+    /// Writes a text representation of this rectangle to standard output. Set `as_hex` to true to
+    /// generate exact binary representations of floating point numbers.
+    ///
+    /// - `as_hex` true if scalar values are written as hexadecimal
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Rect_dump>
     pub fn dump(&self, as_hex: impl Into<Option<bool>>) {
         unsafe { self.native().dump(as_hex.into().unwrap_or_default()) }
     }

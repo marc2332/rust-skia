@@ -1,3 +1,6 @@
+//! Provides access to the available font families and matches typefaces by family name, style,
+//! and character (fallback).
+
 use skia_bindings::{self as sb, SkFontMgr, SkFontStyleSet, SkRefCntBase};
 use std::{ffi::CString, fmt, mem, os::raw::c_char, ptr};
 
@@ -8,6 +11,7 @@ use crate::{
 };
 
 pub mod request {
+    //! Helpers for matching fonts by character and variation model, used for font fallback.
     use skia_bindings::{self as sb, SkFontMgr_Request_CMapEntry};
 
     use crate::{FontStyle, Unichar, font_arguments, prelude::*};
@@ -16,6 +20,7 @@ pub mod request {
     #[repr(C)]
     pub struct CMapEntry {
         pub character: Unichar,
+        /// Zero for default variation.
         pub variation: Unichar,
     }
 
@@ -47,6 +52,9 @@ pub mod request {
 #[derive(Clone, Debug, Default)]
 pub struct Request<'a> {
     pub cmap_entries: &'a [request::CMapEntry],
+    /// `bcp_47[0]` is the least significant fallback, `bcp_47[bcp_47.len() - 1]` is the most
+    /// significant. If no specified `bcp_47` codes match any font with the requested character will
+    /// be matched.
     pub bcp_47: &'a [&'a str],
     pub family_name: Option<&'a str>,
     pub model: &'a [font_arguments::variation_position::Coordinate],
@@ -153,6 +161,7 @@ impl FontMgr {
         FontMgr::from_ptr(unsafe { sb::C_SkFontMgr_NewSystem() }).unwrap()
     }
 
+    /// Returns an empty font manager without any typeface dependencies.
     pub fn empty() -> Self {
         FontMgr::from_ptr(unsafe { sb::C_SkFontMgr_RefEmpty() }).unwrap()
     }
@@ -195,6 +204,10 @@ impl FontMgr {
         .unwrap()
     }
 
+    /// Will return an empty set if the name is not found.
+    ///
+    /// It is possible that this will return a style set not accessible from
+    /// [`Self::new_style_set()`] due to hidden or auto-activated fonts.
     pub fn match_family(&self, family_name: impl AsRef<str>) -> FontStyleSet {
         let family_name = CString::new(family_name.as_ref()).unwrap();
         FontStyleSet::from_ptr(unsafe {
@@ -203,6 +216,11 @@ impl FontMgr {
         .unwrap()
     }
 
+    /// Find the closest matching typeface to the specified family name and style and return a ref
+    /// to it. Returns `None` if no 'good' match is found.
+    ///
+    /// It is possible that this will return a style set not accessible from
+    /// [`Self::new_style_set()`] or [`Self::match_family()`] due to hidden or auto-activated fonts.
     pub fn match_family_style(
         &self,
         family_name: impl AsRef<str>,
@@ -215,6 +233,16 @@ impl FontMgr {
     }
 
     // TODO: support IntoIterator / AsRef<str> for bcp_47?
+    /// Use the system fallback to find a typeface for the given character.
+    /// Note that `bcp_47` is a combination of ISO 639, 15924, and 3166-1 codes,
+    /// so it is fine to just pass a ISO 639 here.
+    ///
+    /// Returns `None` if no family can be found for the character
+    /// in the system fallback.
+    ///
+    /// `bcp_47[0]` is the least significant fallback, `bcp_47[bcp_47.len() - 1]` is the most
+    /// significant. If no specified `bcp_47` codes match, any font with the requested character
+    /// will be matched.
     pub fn match_family_style_character(
         &self,
         family_name: impl AsRef<str>,
@@ -240,12 +268,16 @@ impl FontMgr {
         })
     }
 
+    /// The family name must strongly match, everything else is tie breakers.
     pub fn match_request(&self, request: &Request<'_>) -> Option<Typeface> {
         with_ffi_request(request, |ffi_request| {
             Typeface::from_ptr(unsafe { sb::C_SkFontMgr_match(self.native(), ffi_request) })
         })
     }
 
+    /// The first cmap entry must match. Then matched by [`Request::bcp_47`], then
+    /// [`Request::family_name`], then [`Request::model`] (italic, slant, width, weight), with
+    /// synthetics allowed or not.
     pub fn fallback(&self, request: &Request<'_>) -> Option<Typeface> {
         with_ffi_request(request, |ffi_request| {
             Typeface::from_ptr(unsafe { sb::C_SkFontMgr_fallback(self.native(), ffi_request) })
@@ -261,11 +293,8 @@ impl FontMgr {
         panic!("Removed without replacement")
     }
 
-    /// Create a typeface for the supplied data and TTC index (use 0 for files
-    /// that are not collections). When possible the underlying data allocation
-    /// is shared, but otherwise will be copied.
-    ///
-    /// Returns `None` if the the data is unrecognized.
+    /// Create a typeface for the specified data and TTC index (pass `None` for none), or `None`
+    /// if the data is not recognized.
     pub fn new_from_data(&self, data: Data, ttc_index: impl Into<Option<u32>>) -> Option<Typeface> {
         Typeface::from_ptr(unsafe {
             sb::C_SkFontMgr_makeFromData(
@@ -276,10 +305,8 @@ impl FontMgr {
         })
     }
 
-    /// Create a typeface from the supplied byte and TTC index (0 for files
-    /// that are not collections). The bytes will be copied.
-    ///
-    /// Returns `None` if the the data is unrecognized.
+    /// Create a typeface for the specified bytes and TTC index (pass `None` for none), or `None`
+    /// if the bytes are not recognized.
     pub fn new_from_bytes(
         &self,
         bytes: &[u8],

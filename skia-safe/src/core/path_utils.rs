@@ -1,3 +1,5 @@
+//! Utility functions for paths, e.g. computing the filled equivalent of a stroked path.
+
 use crate::{Matrix, Paint, Path, PathBuilder, Rect, prelude::*};
 use skia_bindings as sb;
 

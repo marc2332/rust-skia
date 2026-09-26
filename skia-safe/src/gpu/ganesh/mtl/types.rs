@@ -12,6 +12,8 @@ pub use skia_bindings::GrMTLPixelFormat as PixelFormat;
 pub use skia_bindings::GrMTLStorageMode as StorageMode;
 pub use skia_bindings::GrMTLTextureUsage as TextureUsage;
 
+/// Types for interacting with Metal resources created externally to Skia.
+/// This is used by `GrBackendObjects`.
 pub type TextureInfo = prelude::Handle<GrMtlTextureInfo>;
 unsafe_send_sync!(TextureInfo);
 

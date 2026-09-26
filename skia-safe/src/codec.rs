@@ -1,3 +1,8 @@
+//! Decoding of encoded images into [`crate::Image`]s and [`crate::Pixmap`]s.
+//!
+//! The [`Codec`] type decodes an encoded image from a stream or data, and the [`codecs`] module
+//! provides the [`codecs::Decoder`] implementations for the supported formats.
+
 // TODO: wrap SkAndroidCodec.h, SkCodecAnimation.h
 
 mod _codec;

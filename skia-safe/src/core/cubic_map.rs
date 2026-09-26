@@ -3,6 +3,12 @@ use crate::{Point, Scalar, scalar};
 use skia_bindings as sb;
 use skia_bindings::SkCubicMap;
 
+/// Fast evaluation of a cubic ease-in / ease-out curve. This is defined as a parametric cubic
+/// curve inside the unit square.
+///
+/// `pt[0]` is implicitly `{ 0, 0 }`
+/// `pt[3]` is implicitly `{ 1, 1 }`
+/// `pts[1,2].X` are inside the unit `[0..1]`
 #[derive(Copy, Clone, Debug)]
 #[repr(transparent)]
 pub struct CubicMap(SkCubicMap);

@@ -1,5 +1,8 @@
 #![allow(deprecated)]
 
+//! Deprecated [`crate::MaskFilter`] factory functions that apply a table lookup to the alpha
+//! values of a mask. Will be removed in an upcoming Skia release.
+
 use crate::{MaskFilter, prelude::*, scalar};
 use skia_bindings::{self as sb};
 

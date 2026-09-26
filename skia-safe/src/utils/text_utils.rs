@@ -1,3 +1,4 @@
+//! Helpers for drawing strings with a [`crate::Font`] and [`crate::Paint`] (Skia's `SkTextUtils`).
 use skia_bindings::SkTextUtils;
 
 use crate::{Canvas, EncodedText, Font, Paint, Path, Point, prelude::*};

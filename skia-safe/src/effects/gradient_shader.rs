@@ -1,5 +1,7 @@
 #![allow(deprecated)]
 
+//! Deprecated gradient shader factory functions, use the [`crate::gradient`] module instead.
+
 use crate::{
     Color, Color4f, ColorSpace, Matrix, Point, Shader, TileMode, gradient, scalar, shaders,
 };

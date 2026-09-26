@@ -1,3 +1,6 @@
+//! Describes the typeface and style of a font; a [`Typeface`] is used by [`crate::Font`] to draw
+//! text.
+
 use std::{fmt, io, ptr};
 
 use skia_bindings::{self as sb, SkRefCntBase, SkTypeface, SkTypeface_LocalizedStrings};
@@ -124,6 +127,8 @@ impl Typeface {
         unsafe { self.native().isSyntheticOblique() }
     }
 
+    /// Returns a 32bit value for this typeface, unique for the underlying font data.
+    /// Will never return 0.
     pub fn unique_id(&self) -> TypefaceId {
         self.native().fUniqueID
     }
@@ -132,8 +137,8 @@ impl Typeface {
     ///
     /// `None` does not compare equal to any typeface.
     ///
-    /// - `face_a`: first typeface.
-    /// - `face_b`: second typeface.
+    /// - `face_a` first typeface.
+    /// - `face_b` second typeface.
     // Decided not to support PartialEq instead of this function,
     // because Skia does not support the operator ==.
     pub fn equal(face_a: impl AsRef<Typeface>, face_b: impl AsRef<Typeface>) -> bool {
@@ -145,15 +150,15 @@ impl Typeface {
     /// If `arguments` does not supply a value for some font parameter, the value from this
     /// typeface is used.
     ///
-    /// - `arguments`: clone parameters to apply.
+    /// - `arguments` clone parameters to apply.
     pub fn clone_with_arguments(&self, arguments: &FontArguments) -> Option<Typeface> {
         Typeface::from_ptr(unsafe { sb::C_SkTypeface_makeClone(self.native(), arguments.native()) })
     }
 
     /// Writes a signature sufficient to reconstruct a typeface referencing the same font.
     ///
-    /// - `write`: destination stream.
-    /// - `behavior`: controls whether font data is included.
+    /// - `write` destination stream.
+    /// - `behavior` controls whether font data is included.
     pub fn serialize_stream(&self, mut write: impl io::Write, behavior: SerializeBehavior) {
         let mut stream = RustWStream::new(&mut write);
         unsafe { sb::C_SkTypeface_serialize2(self.native(), stream.stream_mut(), behavior) }
@@ -161,7 +166,7 @@ impl Typeface {
 
     /// Returns serialized typeface data.
     ///
-    /// - `behavior`: controls whether font data is included.
+    /// - `behavior` controls whether font data is included.
     // TODO: return Data as impl Deref<[u8]> / Borrow<[u8]> here?
     pub fn serialize(&self, behavior: SerializeBehavior) -> Data {
         Data::from_ptr(unsafe { sb::C_SkTypeface_serialize(self.native(), behavior) }).unwrap()
@@ -173,8 +178,8 @@ impl Typeface {
     ///
     /// Goes through all registered typeface factories and `last_resort_mgr` when provided.
     ///
-    /// - `data`: serialized typeface bytes.
-    /// - `last_resort_mgr`: optional fallback font manager.
+    /// - `data` serialized typeface bytes.
+    /// - `last_resort_mgr` optional fallback font manager.
     pub fn make_deserialize(
         mut data: impl io::Read,
         last_resort_mgr: impl Into<Option<FontMgr>>,
@@ -190,8 +195,8 @@ impl Typeface {
 
     /// Converts UTF-32 code points to glyph IDs.
     ///
-    /// - `uni`: UTF-32 code points.
-    /// - `glyphs`: output glyph IDs.
+    /// - `uni` UTF-32 code points.
+    /// - `glyphs` output glyph IDs.
     pub fn unichars_to_glyphs(&self, uni: &[Unichar], glyphs: &mut [GlyphId]) {
         unsafe {
             sb::C_SkTypeface_unicharsToGlyphs(
@@ -206,16 +211,16 @@ impl Typeface {
 
     /// Converts UTF-8 text to glyph IDs.
     ///
-    /// - `str`: input text.
-    /// - `glyphs`: output glyph IDs.
+    /// - `str` input text.
+    /// - `glyphs` output glyph IDs.
     pub fn str_to_glyphs(&self, str: impl AsRef<str>, glyphs: &mut [GlyphId]) -> usize {
         self.text_to_glyphs(str.as_ref(), glyphs)
     }
 
     /// Converts encoded text to glyph IDs.
     ///
-    /// - `text`: encoded text input.
-    /// - `glyphs`: output glyph IDs.
+    /// - `text` encoded text input.
+    /// - `glyphs` output glyph IDs.
     pub fn text_to_glyphs(&self, text: impl EncodedText, glyphs: &mut [GlyphId]) -> usize {
         let (ptr, size, encoding) = text.as_raw();
         unsafe {
@@ -234,7 +239,7 @@ impl Typeface {
     ///
     /// Returns `0` when the code point is not supported.
     ///
-    /// - `unichar`: Unicode code point.
+    /// - `unichar` Unicode code point.
     pub fn unichar_to_glyph(&self, unichar: Unichar) -> GlyphId {
         unsafe { self.native().unicharToGlyph(unichar) }
     }
@@ -267,7 +272,7 @@ impl Typeface {
     ///
     /// Returns `None` if the table is not present.
     ///
-    /// - `tag`: table tag.
+    /// - `tag` table tag.
     pub fn get_table_size(&self, tag: FontTableTag) -> Option<usize> {
         let size = unsafe { self.native().getTableSize(tag) };
         if size != 0 { Some(size) } else { None }
@@ -277,8 +282,8 @@ impl Typeface {
     ///
     /// Returns the number of bytes copied.
     ///
-    /// - `tag`: table tag.
-    /// - `data`: destination buffer.
+    /// - `tag` table tag.
+    /// - `data` destination buffer.
     pub fn get_table_data(&self, tag: FontTableTag, data: &mut [u8]) -> usize {
         unsafe {
             self.native()
@@ -290,7 +295,7 @@ impl Typeface {
     ///
     /// Returns `None` if the table is not found.
     ///
-    /// - `tag`: table tag.
+    /// - `tag` table tag.
     pub fn copy_table_data(&self, tag: FontTableTag) -> Option<Data> {
         Data::from_ptr(unsafe { sb::C_SkTypeface_copyTableData(self.native(), tag) })
     }
@@ -307,8 +312,8 @@ impl Typeface {
     ///
     /// Adjustments are in design units relative to units-per-em.
     ///
-    /// - `glyphs`: input glyph run.
-    /// - `adjustments`: output adjustments; length should be `glyphs.len() - 1`.
+    /// - `glyphs` input glyph run.
+    /// - `adjustments` output adjustments; length should be `glyphs.len() - 1`.
     // note: adjustments slice length must be equal to glyph's len - 1.
     pub fn get_kerning_pair_adjustments(
         &self,

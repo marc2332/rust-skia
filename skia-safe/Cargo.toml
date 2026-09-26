@@ -29,16 +29,16 @@ doctest = false
 
 [features]
 default = ["binary-cache", "embed-icudtl", "jpeg"]
-all-linux = ["gl", "egl", "vulkan", "x11", "wayland", "textlayout", "svg", "skottie", "webp", "graphite"]
-all-windows = ["gl", "vulkan", "d3d", "textlayout", "svg", "skottie", "webp", "graphite"]
-all-macos = ["gl", "vulkan", "metal", "textlayout", "svg", "skottie", "webp", "graphite"]
-gl = ["gpu", "skia-bindings/gl"]
+all-linux = ["ganesh", "gl", "egl", "vulkan", "x11", "wayland", "textlayout", "svg", "skottie", "webp", "graphite"]
+all-windows = ["ganesh", "gl", "vulkan", "d3d", "textlayout", "svg", "skottie", "webp", "graphite"]
+all-macos = ["ganesh", "gl", "vulkan", "metal", "textlayout", "svg", "skottie", "webp", "graphite"]
+gl = ["ganesh", "skia-bindings/gl"]
 egl = ["gl", "skia-bindings/egl"]
 x11 = ["gl", "skia-bindings/x11"]
 wayland = ["egl", "skia-bindings/wayland"]
-vulkan = ["gpu", "skia-bindings/vulkan"]
-metal = ["gpu", "skia-bindings/metal"]
-d3d = ["gpu", "windows", "skia-bindings/d3d"]
+vulkan = ["skia-bindings/vulkan"]
+metal = ["skia-bindings/metal"]
+d3d = ["ganesh", "windows", "skia-bindings/d3d"]
 textlayout = ["skia-bindings/textlayout"]
 svg = ["skia-bindings/svg", "dep:base64", "dep:percent-encoding", "skia-svg-macros"]
 skottie = ["skia-bindings/skottie", "textlayout", "dep:base64", "dep:percent-encoding"]
@@ -57,8 +57,9 @@ no-compile = ["skia-bindings/no-compile"]
 # test only
 save-svg-images = []
 
-# implied only, do not use
+# Deprecated feature name; enabling it produces a migration error.
 gpu = []
+ganesh = ["skia-bindings/ganesh"]
 graphite = ["skia-bindings/graphite"]
 
 [dependencies]
@@ -81,13 +82,16 @@ windows = { version = "0.62.0", features = [
 ureq = { version = "3.0.4", optional = true }
 base64 = { version = "0.23.0", optional = true }
 percent-encoding = { version = "2.3.1", optional = true }
-skia-svg-macros = { package = "freya-skia-svg-macros", version = "0.1.0", path = "../skia-svg-macros", optional = true }
+skia-svg-macros = { package = "freya-skia-svg-macros", version = "0.2.0", path = "../skia-svg-macros", optional = true }
 
 [dev-dependencies]
 
 serial_test = "4.0"
 static_assertions = "1.1"
 winit = "0.30.2"
+
+# icon & gl-window examples
+skia-icon = { path = "../skia-icon" }
 
 # gl-window & vulkan-window
 [target.'cfg(all(not(target_os = "android"), not(target_os = "emscripten"), not(target_os = "ios")))'.dev-dependencies]
@@ -100,7 +104,7 @@ gl-rs = { version = "0.14.0", package = "gl" }
 ash = { version = "^0.38.0" }
 vulkano = { version = "0.35" }
 
-# metal-window
+# metal-window & metal-window-graphite
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dev-dependencies]
 objc2 = { version = "0.6.3", default-features = false }
 objc2-core-foundation = { version = "0.3.2", default-features = false }
@@ -108,7 +112,7 @@ objc2-metal = { version = "0.3.2", default-features = false, features = ["MTLDev
 objc2-quartz-core = { version = "0.3.2", default-features = false, features = ["objc2-core-foundation", "objc2-metal", "CAMetalLayer"] }
 raw-window-handle = "0.6.0"
 
-# metal-window (macOS)
+# metal-window & metal-window-graphite (macOS)
 [target.'cfg(target_os = "macos")'.dev-dependencies]
 objc2-app-kit = { version = "0.3.2", default-features = false, features = ["objc2-quartz-core", "NSView", "NSResponder"] }
 

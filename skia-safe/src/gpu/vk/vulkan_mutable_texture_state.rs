@@ -1,4 +1,5 @@
 pub mod mutable_texture_states {
+    //! Vulkan-specific helpers for constructing and querying [`crate::gpu::MutableTextureState`].
     use skia_bindings as sb;
 
     use crate::{

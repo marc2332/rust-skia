@@ -60,35 +60,39 @@ pub fn jobs(workflow: &Workflow) -> Vec<Job> {
     }
 }
 
-pub fn qa_jobs(workflow: &Workflow) -> Vec<Job> {
+pub fn qa_jobs(_workflow: &Workflow) -> Vec<Job> {
     vec![]
 }
 
 /// Jobs for building prebuilt binaries.
 pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
-    let mut features: Vec<Features> = if workflow.host_os == HostOS::Wasm {
-        // WASM: Only features that work (no vulkan, ureq, x11, wayland)
-        vec![
-            "".into(),
-            "gl".into(),
-            "textlayout".into(),
-            "gl,textlayout".into(),
-        ]
-    } else {
-        vec![]
-    };
+    let freya_features = freya_binaries_features(workflow);
+    let mut features = freya_features.clone();
 
     match workflow.host_os {
-        HostOS::Windows | HostOS::WindowsArm => {}
-        HostOS::Linux | HostOS::Android => {}
-        HostOS::MacOS => {}
-        HostOS::Wasm => {
-            // WASM-specific features added via grida_canvas_release_features
+        HostOS::Windows => {
+            features.extend_from_slice(&[
+                "graphite,vulkan,svg,textlayout,webp".into(),
+                "graphite,gl,vulkan,svg,textlayout,webp".into(),
+            ]);
         }
+        HostOS::Linux => {
+            features.extend_from_slice(&[
+                "graphite,vulkan,svg,textlayout,webp".into(),
+                "graphite,gl,vulkan,svg,textlayout,wayland,webp,x11".into(),
+            ]);
+        }
+        HostOS::Android => {
+            features.push("graphite,vulkan,svg,textlayout,webp".into());
+        }
+        HostOS::MacOS => {
+            features.extend_from_slice(&[
+                "graphite,metal,svg,textlayout,webp".into(),
+                "ganesh,graphite,metal,svg,textlayout,webp".into(),
+            ]);
+        }
+        HostOS::WindowsArm | HostOS::Wasm => {}
     }
-
-    let freya_features = freya_binaries_features(workflow);
-    features.extend(freya_features.clone());
 
     features.sort();
     features.dedup();
@@ -135,8 +139,7 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
         }
         HostOS::MacOS => {
             vec![
-                "metal,svg,textlayout,webp".into(),
-                // Software-only rendering
+                "ganesh,metal,svg,textlayout,webp".into(),
                 "svg,textlayout,webp".into(),
             ]
         }
@@ -166,10 +169,10 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
 fn vizia_binaries_features(workflow: &Workflow) -> Vec<Features> {
     match workflow.host_os {
         HostOS::MacOS => {
-            vec!["gl,vulkan,textlayout,svg".into()]
+            vec!["ganesh,gl,vulkan,textlayout,svg".into()]
         }
         HostOS::Windows => {
-            vec!["gl,vulkan,textlayout,svg,d3d".into()]
+            vec!["ganesh,gl,vulkan,textlayout,svg,d3d".into()]
         }
         HostOS::WindowsArm | HostOS::Wasm | HostOS::Android => {
             vec![]
@@ -189,17 +192,17 @@ fn skia_canvas_binaries_features(workflow: &Workflow) -> Vec<Features> {
         HostOS::MacOS => {
             vec![
                 "textlayout,webp,svg".into(),
-                "metal,textlayout,webp,svg".into(),
+                "ganesh,metal,textlayout,webp,svg".into(),
             ]
         }
         HostOS::Windows => {
-            vec!["vulkan,textlayout,webp,svg".into()]
+            vec!["ganesh,vulkan,textlayout,webp,svg".into()]
         }
         HostOS::WindowsArm => {
-            vec!["vulkan,textlayout,webp,svg".into()]
+            vec!["ganesh,vulkan,textlayout,webp,svg".into()]
         }
         HostOS::Linux => {
-            vec!["vulkan,textlayout,webp,svg".into()]
+            vec!["ganesh,vulkan,textlayout,webp,svg".into()]
         }
         HostOS::Wasm | HostOS::Android => {
             vec![]

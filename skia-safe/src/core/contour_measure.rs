@@ -1,3 +1,6 @@
+//! Measures the length of a [`crate::Path`] contour and computes position and tangent matrices
+//! along it.
+
 use std::fmt;
 use std::marker::PhantomData;
 
@@ -52,7 +55,7 @@ impl ContourMeasure {
     /// Pins `distance` to `0 <= distance <= length()`, then computes the corresponding
     /// position and tangent.
     ///
-    /// - `distance`: distance along the contour.
+    /// - `distance` distance along the contour.
     #[must_use]
     pub fn pos_tan(&self, distance: scalar) -> Option<(Point, Vector)> {
         let mut p = Point::default();
@@ -70,8 +73,8 @@ impl ContourMeasure {
     ///
     /// Returns `None` if there is no path, or a zero-length path was specified.
     ///
-    /// - `distance`: distance along the contour.
-    /// - `flags`: controls whether position, tangent, or both are computed.
+    /// - `distance` distance along the contour.
+    /// - `flags` controls whether position, tangent, or both are computed.
     pub fn get_matrix(
         &self,
         distance: scalar,
@@ -102,10 +105,10 @@ impl ContourMeasure {
     ///
     /// Begins the segment with a `move_to` if `start_with_move_to` is `true`.
     ///
-    /// - `start_d`: start distance along the contour.
-    /// - `stop_d`: stop distance along the contour.
-    /// - `path_builder`: destination that receives the segment.
-    /// - `start_with_move_to`: whether to begin with `move_to`.
+    /// - `start_d` start distance along the contour.
+    /// - `stop_d` stop distance along the contour.
+    /// - `path_builder` destination that receives the segment.
+    /// - `start_with_move_to` whether to begin with `move_to`.
     pub fn segment(
         &self,
         start_d: scalar,
@@ -125,10 +128,10 @@ impl ContourMeasure {
     ///
     /// Begins the segment with a `move_to` if `start_with_move_to` is `true`.
     ///
-    /// - `start_d`: start distance along the contour.
-    /// - `stop_d`: stop distance along the contour.
-    /// - `path_builder`: destination that receives the segment.
-    /// - `start_with_move_to`: whether to begin with `move_to`.
+    /// - `start_d` start distance along the contour.
+    /// - `stop_d` stop distance along the contour.
+    /// - `path_builder` destination that receives the segment.
+    /// - `start_with_move_to` whether to begin with `move_to`.
     pub fn get_segment(
         &self,
         start_d: scalar,
@@ -288,9 +291,9 @@ impl ContourMeasureIter {
     /// `res_scale` controls the precision of the measure. Values greater than
     /// `1` increase precision (and may slow down the computation).
     ///
-    /// - `path`: source path to iterate.
-    /// - `force_closed`: whether open contours are treated as closed.
-    /// - `res_scale`: optional precision scale (defaults to `1.0`).
+    /// - `path` source path to iterate.
+    /// - `force_closed` whether open contours are treated as closed.
+    /// - `res_scale` optional precision scale (defaults to `1.0`).
     pub fn new(path: &Path, force_closed: bool, res_scale: impl Into<Option<scalar>>) -> Self {
         Self::from_path(path, force_closed, res_scale)
     }
@@ -303,9 +306,9 @@ impl ContourMeasureIter {
     /// `res_scale` controls the precision of the measure. Values greater than
     /// `1` increase precision (and may slow down the computation).
     ///
-    /// - `path`: source path to iterate.
-    /// - `force_closed`: whether open contours are treated as closed.
-    /// - `res_scale`: optional precision scale (defaults to `1.0`).
+    /// - `path` source path to iterate.
+    /// - `force_closed` whether open contours are treated as closed.
+    /// - `res_scale` optional precision scale (defaults to `1.0`).
     pub fn from_path(
         path: &Path,
         force_closed: bool,
@@ -321,9 +324,9 @@ impl ContourMeasureIter {
     /// The parts of the path that are needed are copied, so the caller is free
     /// to modify or delete the path after this call.
     ///
-    /// - `path`: source path to iterate.
-    /// - `force_closed`: whether open contours are treated as closed.
-    /// - `res_scale`: optional precision scale (defaults to `1.0`).
+    /// - `path` source path to iterate.
+    /// - `force_closed` whether open contours are treated as closed.
+    /// - `res_scale` optional precision scale (defaults to `1.0`).
     pub fn reset(
         &mut self,
         path: &Path,

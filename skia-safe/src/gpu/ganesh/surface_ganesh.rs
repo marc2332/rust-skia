@@ -1,3 +1,5 @@
+//! Creation of GPU-backed [`crate::Surface`]s for the Ganesh backend.
+
 use skia_bindings as sb;
 
 use crate::{ImageInfo, Surface, SurfaceProps, gpu, prelude::*, surface::BackendHandleAccess};

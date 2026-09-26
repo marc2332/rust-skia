@@ -1,3 +1,6 @@
+//! Specifies the source color(s) for what is being drawn. If a [`crate::Paint`] has no shader,
+//! the paint's color is used.
+
 use std::fmt;
 
 use skia_bindings::{self as sb, SkFlattenable, SkRefCntBase, SkShader};
@@ -132,6 +135,8 @@ impl Shader {
 }
 
 pub mod shaders {
+    //! Factory functions for creating [`crate::Shader`]s, e.g. gradients, image shaders, and
+    //! Perlin noise.
     use skia_bindings as sb;
 
     use crate::{

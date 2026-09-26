@@ -9,7 +9,7 @@ use skia_bindings::{
 };
 use std::{ffi, fmt, io, marker::PhantomData, mem, pin::Pin, ptr};
 
-/// Trait representing an Skia allocated Stream type with a base class of SkStream.
+/// Trait representing an Skia allocated Stream type with a base class of [`Stream`].
 #[repr(transparent)]
 pub struct Stream<N: NativeStreamBase>(ptr::NonNull<N>);
 unsafe impl<N: NativeStreamBase> Send for Stream<N> {}

@@ -1,3 +1,5 @@
+//! Options for sampling images: filter mode, mipmap mode, and cubic resampler.
+
 use skia_bindings::{SkCubicResampler, SkSamplingOptions};
 
 pub use skia_bindings::SkFilterMode as FilterMode;

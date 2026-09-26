@@ -1,3 +1,6 @@
+//! Base class for image filters: when installed in a [`crate::Paint`], drawing occurs as usual but
+//! as if into an offscreen, which is then filtered before being drawn to the device.
+
 use crate::{ColorFilter, IRect, Matrix, NativeFlattenable, Rect, prelude::*};
 use skia_bindings::{self as sb, SkColorFilter, SkFlattenable, SkImageFilter, SkRefCntBase};
 use std::{fmt, ptr};

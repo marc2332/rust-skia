@@ -1,4 +1,5 @@
 pub mod cpu {
+    //! A CPU-backed [`crate::recorder::Recorder`] that records drawing commands.
     use std::fmt;
 
     use crate::{Recorder as _, prelude::*, recorder};

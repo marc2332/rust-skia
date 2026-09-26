@@ -1,3 +1,4 @@
+//! SVG morphology filter effect (`feMorphology`), which erodes or dilates the input image.
 use super::{DebugAttributes, NodeSubtype};
 use crate::{impl_default_make, prelude::*, scalar};
 use skia_bindings as sb;

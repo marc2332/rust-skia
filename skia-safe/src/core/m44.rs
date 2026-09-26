@@ -406,6 +406,12 @@ impl Index<usize> for V4 {
     }
 }
 
+/// 4x4 matrix used by [`crate::Canvas`] and other parts of Skia.
+///
+/// Skia assumes a right-handed coordinate system:
+/// +X goes to the right
+/// +Y goes down
+/// +Z goes into the screen (away from the viewer)
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct M44 {
@@ -450,6 +456,7 @@ impl M44 {
     }
 
     #[allow(clippy::too_many_arguments)]
+    /// The constructor parameters are in row-major order.
     pub const fn new(
         m0: scalar,
         m4: scalar,
@@ -525,6 +532,10 @@ impl M44 {
         m
     }
 
+    /// Scales and translates `src` to fill `dst` exactly.
+    ///
+    /// - `src` source rectangle
+    /// - `dst` destination rectangle
     pub fn rect_to_rect(src: impl AsRef<Rect>, dst: impl AsRef<Rect>) -> Self {
         let (src, dst) = (src.as_ref(), dst.as_ref());
         Self::construct(|m| unsafe { sb::C_SkM44_RectToRect(src.native(), dst.native(), m) })
@@ -659,6 +670,15 @@ impl M44 {
         self
     }
 
+    /// Sets this matrix to rotate about the specified unit-length axis vector, by an angle
+    /// specified by its sin and cos.
+    ///
+    /// This does not attempt to verify that `axis.length() == 1` or that the sin, cos values are
+    /// correct.
+    ///
+    /// - `axis` unit-length axis vector
+    /// - `sin_angle` sine of the rotation angle
+    /// - `cos_angle` cosine of the rotation angle
     pub fn set_rotate_unit_sin_cos(
         &mut self,
         axis: V3,
@@ -672,10 +692,25 @@ impl M44 {
         self
     }
 
+    /// Sets this matrix to rotate about the specified unit-length axis vector, by an angle
+    /// specified in radians.
+    ///
+    /// This does not attempt to verify that `axis.length() == 1`.
+    ///
+    /// - `axis` unit-length axis vector
+    /// - `radians` rotation angle in radians
     pub fn set_rotate_unit(&mut self, axis: V3, radians: scalar) -> &mut Self {
         self.set_rotate_unit_sin_cos(axis, radians.sin(), radians.cos())
     }
 
+    /// Sets this matrix to rotate about the specified axis vector, by an angle specified in
+    /// radians.
+    ///
+    /// Note: `axis` is not assumed to be unit-length, so it will be normalized internally. If
+    /// `axis` is already unit-length, call [`Self::set_rotate_unit()`] instead.
+    ///
+    /// - `axis` axis vector
+    /// - `radians` rotation angle in radians
     pub fn set_rotate(&mut self, axis: V3, radians: scalar) -> &mut Self {
         unsafe { self.native_mut().setRotate(axis.into_native(), radians) };
         self
@@ -715,14 +750,29 @@ impl M44 {
         self
     }
 
+    /// A matrix is categorized as 'perspective' if the bottom row is not [0, 0, 0, 1]. For most
+    /// uses, a bottom row of [0, 0, 0, X] behaves like a non-perspective matrix, though it will be
+    /// categorized as perspective. Calling this will change the matrix such that, if its bottom row
+    /// was [0, 0, 0, X], it will be changed to [0, 0, 0, 1] by scaling the rest of the matrix by
+    /// 1/X.
+    ///
+    /// ```text
+    /// | A B C D |    | A/X B/X C/X D/X |
+    /// | E F G H | -> | E/X F/X G/X H/X |   for X != 0
+    /// | I J K L |    | I/X J/X K/X L/X |
+    /// | 0 0 0 X |    |  0   0   0   1  |
+    /// ```
     pub fn normalize_perspective(&mut self) {
         unsafe { self.native_mut().normalizePerspective() }
     }
 
+    /// Returns true if all elements of the matrix are finite. Returns false if any element is
+    /// infinity, or NaN.
     pub fn is_finite(&self) -> bool {
         is_finite(&self.mat)
     }
 
+    /// If this is invertible, returns `Some(inverse)`. If it is not invertible, returns `None`.
     #[must_use]
     pub fn invert(&self) -> Option<M44> {
         let mut m = Self::default();
@@ -742,6 +792,15 @@ impl M44 {
         V4::from_native_c(unsafe { sb::C_SkM44_map(self.native(), x, y, z, w) })
     }
 
+    /// When converting from [`M44`] to [`Matrix`], the third row and column is dropped. When
+    /// converting from [`Matrix`] to [`M44`] the third row and column remain as identity:
+    ///
+    /// ```text
+    /// [ a b c ]      [ a b 0 c ]
+    /// [ d e f ]  ->  [ d e 0 f ]
+    /// [ g h i ]      [ 0 0 1 0 ]
+    ///                [ g h 0 i ]
+    /// ```
     pub fn to_m33(&self) -> Matrix {
         let m = &self.mat;
         Matrix::new_all(m[0], m[4], m[12], m[1], m[5], m[13], m[3], m[7], m[15])

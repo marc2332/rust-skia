@@ -1,3 +1,4 @@
+//! SVG filter effect primitives (the `<fe...>` elements) used when rendering SVG documents.
 mod blend;
 mod color_matrix;
 mod component_transfer;

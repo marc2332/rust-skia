@@ -1,3 +1,6 @@
+//! The Metal backend for Ganesh: the backend context, backend surfaces, direct-context
+//! construction, and Metal types.
+
 mod backend_context;
 mod backend_surface;
 mod direct_context;

@@ -1,3 +1,4 @@
+//! Multi-line, styled text layout and rendering via Skia's `skparagraph` module (see [`crate::textlayout::Paragraph`]).
 use std::{ffi, fmt, ops::Range};
 
 use skia_bindings as sb;

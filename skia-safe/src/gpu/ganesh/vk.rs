@@ -1,3 +1,6 @@
+//! The Vulkan backend for Ganesh: Vulkan types, backend surfaces, semaphores, and
+//! direct-context construction.
+
 mod backend_drawable_info;
 mod backend_semaphore;
 mod vk_backend_surface;

@@ -1,9 +1,14 @@
 use skia_bindings as sb;
 use skia_bindings::skgpu_GpuStats;
 
+/// Possible 3D APIs that may be used by Graphite.
+///
+/// Note: Graphite doesn't support some context types (e.g. Direct3D) and will return
+/// [`BackendApi::Unsupported`].
 pub use sb::skgpu_BackendApi as BackendApi;
 variant_name!(BackendApi::Metal);
 
+/// Indicates whether an allocation should count against a cache budget.
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Budgeted(bool);
@@ -18,14 +23,19 @@ impl Budgeted {
 
 // TODO: CallbackResult
 
+/// Is the texture mipmapped or not.
 pub use skia_bindings::skgpu_Mipmapped as Mipmapped;
 
+/// Is the data protected on the GPU or not.
 pub use skia_bindings::skgpu_Protected as Protected;
 variant_name!(Protected::Yes);
 
+#[cfg(feature = "ganesh")]
 pub use skia_bindings::skgpu_Renderable as Renderable;
+#[cfg(feature = "ganesh")]
 variant_name!(Renderable::No);
 
+/// What is the logical origin of a `BackendTexture` passed into Skia.
 pub use skia_bindings::skgpu_Origin as Origin;
 variant_name!(Origin::TopLeft);
 

@@ -1,3 +1,4 @@
+//! Miscellaneous utility helpers for working with Skia: path parsing, text drawing, shadows, cameras, and typefaces.
 mod camera;
 mod custom_typeface;
 mod null_canvas;

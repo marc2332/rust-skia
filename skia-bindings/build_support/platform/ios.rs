@@ -1,9 +1,9 @@
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
 };
 
-use super::prelude::*;
+use super::{apple, prelude::*};
 
 pub struct Ios;
 
@@ -49,10 +49,10 @@ impl PlatformDetails for Ios {
     }
 
     fn bindgen_args(&self, target: &Target, builder: &mut BindgenArgsBuilder) {
-        builder.args(additional_clang_args(
-            &target.architecture,
-            target.abi.as_deref(),
-        ));
+        let platform = IosPlatform::new(&target.architecture, target.abi.as_deref());
+        let sdk = platform.sdk_path();
+        builder.args(additional_clang_args(&target.architecture, platform, &sdk));
+        apple::use_sdk_libcxx(builder, &sdk);
 
         // TODO: duplicated from gn_args, target overrides should probably a separated from Gn and
         // bindgen args.
@@ -98,10 +98,8 @@ fn extra_skia_cflags(arch: &str, abi: Option<&str>) -> Vec<String> {
     IosPlatform::new(arch, abi).flags()
 }
 
-fn additional_clang_args(arch: &str, abi: Option<&str>) -> Vec<String> {
+fn additional_clang_args(arch: &str, platform: IosPlatform, sdk: &Path) -> Vec<String> {
     let mut args: Vec<String> = Vec::new();
-
-    let platform = IosPlatform::new(arch, abi);
 
     args.extend(platform.flags());
 
@@ -117,7 +115,7 @@ fn additional_clang_args(arch: &str, abi: Option<&str>) -> Vec<String> {
     }
 
     args.push("-isysroot".into());
-    args.push(platform.sdk_path().to_str().unwrap().into());
+    args.push(sdk.to_str().unwrap().into());
     args.push("-fembed-bitcode".into());
 
     args
@@ -154,13 +152,9 @@ impl IosPlatform {
         // m119: We have to set -m version-min in cflags, otherwise effects/SkImageFilters.h does
         // not compile: `error: 'value' is unavailable: introduced in iOS 12.0`
         let min_version = format!("-m{platform_variant}-version-min={ios_version}.0");
-        // Even though version-min is defined, This must be defined, too. Otherwise MAX_ALLOWED gets
-        // ignored and set to the highest version, which in turn sets the wrong
-        // GR_METAL_SDK_VERSION.
         let min_required = format!("-D__IPHONE_OS_VERSION_MIN_REQUIRED={ios_version}0000");
-        let max_version = format!("-D__IPHONE_OS_VERSION_MAX_ALLOWED={ios_version}0000");
 
-        vec![min_version, min_required, max_version]
+        vec![min_version, min_required]
     }
 
     fn is_simulator(self) -> bool {

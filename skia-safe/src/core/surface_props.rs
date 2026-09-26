@@ -5,6 +5,9 @@ use skia_bindings::{self as sb, SkPixelGeometry, SkSurfaceProps};
 use crate::{prelude::*, scalar};
 
 // TODO: use the enum rewriter and strip underscores?
+/// Description of how the LCD strips are arranged for each pixel. If this is unknown, or the
+/// pixels are meant to be "portable" and/or transformed before showing (e.g. rotated, scaled)
+/// then use [`PixelGeometry::Unknown`].
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 #[repr(i32)]
 pub enum PixelGeometry {
@@ -44,12 +47,16 @@ bitflags! {
         #[allow(clippy::unnecessary_cast)]
         const USE_DEVICE_INDEPENDENT_FONTS =
             sb::SkSurfaceProps_Flags_kUseDeviceIndependentFonts_Flag as u32;
+        /// Use internal MSAA to render to non-MSAA GPU surfaces.
         #[allow(clippy::unnecessary_cast)]
         const DYNAMIC_MSAA =
             sb::SkSurfaceProps_Flags_kDynamicMSAA_Flag as u32;
+        /// If set, all rendering will have dithering enabled. Currently this only impacts GPU
+        /// backends.
         #[allow(clippy::unnecessary_cast)]
         const ALWAYS_DITHER =
             sb::SkSurfaceProps_Flags_kAlwaysDither_Flag as u32;
+        /// The surface will preserve transparent draws (instead of skipping them).
         #[allow(clippy::unnecessary_cast)]
         const PRESERVES_TRANSPARENT_DRAWS =
             sb::SkSurfaceProps_Flags_kPreservesTransparentDraws_Flag as u32;
@@ -62,6 +69,9 @@ impl Default for SurfacePropsFlags {
     }
 }
 
+/// Describes properties and constraints of a given surface. The rendering engine can parse these
+/// during drawing, and can sometimes optimize its performance (e.g. disabling an expensive
+/// feature).
 #[derive(Copy, Clone)]
 #[repr(transparent)]
 pub struct SurfaceProps(SkSurfaceProps);
@@ -94,12 +104,20 @@ impl fmt::Debug for SurfaceProps {
 }
 
 impl SurfaceProps {
+    /// - `flags` surface properties flags
+    /// - `pixel_geometry` pixel geometry
     pub fn new(flags: SurfacePropsFlags, pixel_geometry: PixelGeometry) -> SurfaceProps {
         Self::from_native_c(unsafe {
             SkSurfaceProps::new1(flags.bits(), pixel_geometry.into_native())
         })
     }
 
+    /// Specified pixel geometry, text contrast, and gamma.
+    ///
+    /// - `flags` surface properties flags
+    /// - `pixel_geometry` pixel geometry
+    /// - `text_contrast` text contrast
+    /// - `text_gamma` text gamma
     pub fn new_with_text_properties(
         flags: SurfacePropsFlags,
         pixel_geometry: PixelGeometry,

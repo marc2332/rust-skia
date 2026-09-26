@@ -1,3 +1,6 @@
+//! The Vulkan backend context ([`BackendContext`]) and its builder, used to create a Ganesh
+//! [`crate::gpu::DirectContext`].
+
 use std::cell::RefCell;
 use std::ffi::{self, CString};
 use std::fmt;

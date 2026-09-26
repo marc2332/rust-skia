@@ -444,7 +444,8 @@ impl TextStyle {
             .map(|ptr| FontArguments::from_native_ref(unsafe { ptr.as_ref() }))
     }
 
-    /// The contents of the [`crate::FontArguments`] will be copied into the [`TextStyle`].
+    /// The contents of the [`crate::FontArguments`] will be copied into the [`TextStyle`], and
+    /// the [`crate::FontArguments`] can be safely deleted after `set_font_arguments` returns.
     pub fn set_font_arguments<'fa>(
         &mut self,
         arguments: impl Into<Option<&'fa crate::FontArguments<'fa, 'fa>>>,

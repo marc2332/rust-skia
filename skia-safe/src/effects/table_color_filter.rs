@@ -1,3 +1,6 @@
+//! Deprecated color filter factory functions that apply a lookup table to colors, use
+//! [`crate::color_filters::table()`] and [`crate::color_filters::table_argb()`] instead.
+
 use crate::{ColorFilter, color_filters};
 
 impl ColorFilter {

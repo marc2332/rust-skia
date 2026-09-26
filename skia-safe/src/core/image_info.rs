@@ -5,6 +5,11 @@ use std::{fmt, mem};
 pub use skia_bindings::SkYUVColorSpace as YUVColorSpace;
 variant_name!(YUVColorSpace::JPEG);
 
+/// Describes pixel and encoding. [`ImageInfo`] can be created from [`ColorInfo`] by providing
+/// dimensions.
+///
+/// It encodes how pixel bits describe alpha, transparency; color components red, blue, and green;
+/// and [`ColorSpace`], the range and linearity of colors.
 pub type ColorInfo = Handle<SkColorInfo>;
 unsafe_send_sync!(ColorInfo);
 
@@ -52,6 +57,15 @@ impl fmt::Debug for ColorInfo {
 }
 
 impl ColorInfo {
+    /// Creates [`ColorInfo`] from [`ColorType`], [`AlphaType`], and optionally [`ColorSpace`].
+    ///
+    /// If `cs` is `None` and [`ColorInfo`] is part of a drawing source, [`ColorSpace`] defaults to
+    /// sRGB, mapping into the surface [`ColorSpace`]. Parameters are not validated to see if their
+    /// values are legal, or that the combination is supported.
+    ///
+    /// - `ct` color type
+    /// - `at` alpha type
+    /// - `cs` optional color space
     pub fn new(ct: ColorType, at: AlphaType, cs: impl Into<Option<ColorSpace>>) -> Self {
         Self::construct(|color_info| unsafe {
             sb::C_SkColorInfo_Construct2(
@@ -63,26 +77,38 @@ impl ColorInfo {
         })
     }
 
+    /// Returns the color space.
     pub fn color_space(&self) -> Option<ColorSpace> {
         ColorSpace::from_unshared_ptr(unsafe { self.native().colorSpace() })
     }
 
+    /// Returns the color type.
     pub fn color_type(&self) -> ColorType {
         ColorType::from_native_c(self.native().fColorType)
     }
 
+    /// Returns the alpha type.
     pub fn alpha_type(&self) -> AlphaType {
         self.native().fAlphaType
     }
 
+    /// Returns true if the color info is opaque.
     pub fn is_opaque(&self) -> bool {
         self.alpha_type().is_opaque() || self.color_type().is_always_opaque()
     }
 
+    /// Returns true if the gamma is close to sRGB.
     pub fn is_gamma_close_to_srgb(&self) -> bool {
         unsafe { self.native().gammaCloseToSRGB() }
     }
 
+    /// Creates [`ColorInfo`] with the same color type and color space, with the alpha type set to
+    /// `new_alpha_type`.
+    ///
+    /// The created [`ColorInfo`] contains `new_alpha_type` even if it is incompatible with the
+    /// color type, in which case the alpha type in [`ColorInfo`] is ignored.
+    ///
+    /// - `new_alpha_type` new alpha type
     #[must_use]
     pub fn with_alpha_type(&self, new_alpha_type: AlphaType) -> Self {
         Self::construct(|ci| unsafe {
@@ -90,6 +116,10 @@ impl ColorInfo {
         })
     }
 
+    /// Creates [`ColorInfo`] with the same alpha type and color space, with the color type set to
+    /// `new_color_type`.
+    ///
+    /// - `new_color_type` new color type
     #[must_use]
     pub fn with_color_type(&self, new_color_type: ColorType) -> Self {
         Self::construct(|ci| unsafe {
@@ -97,6 +127,10 @@ impl ColorInfo {
         })
     }
 
+    /// Creates [`ColorInfo`] with the same alpha type and color type, with the color space set to
+    /// `cs`. `cs` may be `None`.
+    ///
+    /// - `cs` optional color space
     #[must_use]
     pub fn with_color_space(&self, cs: impl Into<Option<ColorSpace>>) -> Self {
         let color_space: Option<ColorSpace> = cs.into();
@@ -105,15 +139,28 @@ impl ColorInfo {
         })
     }
 
+    /// Returns the number of bytes per pixel required by the color type. Returns zero if the color
+    /// type is [`ColorType::Unknown`].
     pub fn bytes_per_pixel(&self) -> usize {
         unsafe { self.native().bytesPerPixel().try_into().unwrap() }
     }
 
+    /// Returns the bit shift converting row bytes to row pixels. Returns zero for
+    /// [`ColorType::Unknown`]. Returns one of: 0, 1, 2, 3, 4; left shift to convert pixels to bytes.
     pub fn shift_per_pixel(&self) -> usize {
         unsafe { self.native().shiftPerPixel().try_into().unwrap() }
     }
 }
 
+/// Describes pixel dimensions and encoding. [`crate::Bitmap`], [`crate::Image`], [`crate::Pixmap`],
+/// and [`crate::Surface`] can be created from [`ImageInfo`]. [`ImageInfo`] can be retrieved from
+/// [`crate::Bitmap`] and [`crate::Pixmap`], but not from [`crate::Image`] and [`crate::Surface`].
+/// For example, [`crate::Image`] and [`crate::Surface`] implementations may defer pixel depth, so
+/// may not completely specify [`ImageInfo`].
+///
+/// [`ImageInfo`] contains dimensions, the pixel integral width and height. It encodes how pixel
+/// bits describe alpha, transparency; color components red, blue, and green; and [`ColorSpace`],
+/// the range and linearity of colors.
 pub type ImageInfo = Handle<SkImageInfo>;
 unsafe_send_sync!(ImageInfo);
 
@@ -156,6 +203,17 @@ impl fmt::Debug for ImageInfo {
 }
 
 impl ImageInfo {
+    /// Creates [`ImageInfo`] from integral dimensions, [`ColorType`], [`AlphaType`], and
+    /// optionally [`ColorSpace`].
+    ///
+    /// If `cs` is `None` and [`ImageInfo`] is part of a drawing source, [`ColorSpace`] defaults to
+    /// sRGB, mapping into the surface [`ColorSpace`]. Parameters are not validated to see if their
+    /// values are legal, or that the combination is supported.
+    ///
+    /// - `dimensions` pixel column and row count; must be zero or greater
+    /// - `ct` color type
+    /// - `at` alpha type
+    /// - `cs` optional color space
     pub fn new(
         dimensions: impl Into<ISize>,
         ct: ColorType,
@@ -175,6 +233,12 @@ impl ImageInfo {
         })
     }
 
+    /// Creates [`ImageInfo`] from integral dimensions and [`ColorInfo`]. Parameters are not
+    /// validated to see if their values are legal, or that the combination is supported.
+    ///
+    /// - `dimensions` pixel column and row count; must be zero or greater
+    /// - `color_info` pixel encoding consisting of [`ColorType`], [`AlphaType`], and [`ColorSpace`]
+    ///   which may be `None`
     pub fn from_color_info(dimensions: impl Into<ISize>, color_info: ColorInfo) -> Self {
         // TODO: (perf) actually move of color_info.
         Self::new(
@@ -185,6 +249,16 @@ impl ImageInfo {
         )
     }
 
+    /// Creates [`ImageInfo`] from integral dimensions, an N32 color type, `at`, and optionally
+    /// [`ColorSpace`]. N32 will equal either BGRA 8888 or RGBA 8888, whichever is optimal.
+    ///
+    /// If `cs` is `None` and [`ImageInfo`] is part of a drawing source, [`ColorSpace`] defaults to
+    /// sRGB, mapping into the surface [`ColorSpace`]. Parameters are not validated to see if their
+    /// values are legal, or that the combination is supported.
+    ///
+    /// - `dimensions` pixel column and row count; must be zero or greater
+    /// - `at` alpha type
+    /// - `cs` optional color space
     pub fn new_n32(
         dimensions: impl Into<ISize>,
         at: AlphaType,
@@ -202,6 +276,12 @@ impl ImageInfo {
         })
     }
 
+    /// Creates [`ImageInfo`] from integral dimensions, an N32 color type, and `at`, with sRGB
+    /// [`ColorSpace`]. Parameters are not validated to see if their values are legal, or that the
+    /// combination is supported.
+    ///
+    /// - `dimensions` pixel column and row count; must be zero or greater
+    /// - `at` alpha type
     pub fn new_s32(dimensions: impl Into<ISize>, at: AlphaType) -> ImageInfo {
         let dimensions = dimensions.into();
         Self::construct(|ii| unsafe {
@@ -209,6 +289,15 @@ impl ImageInfo {
         })
     }
 
+    /// Creates [`ImageInfo`] from integral dimensions, an N32 color type, premultiplied alpha,
+    /// and optional [`ColorSpace`].
+    ///
+    /// If `cs` is `None` and [`ImageInfo`] is part of a drawing source, [`ColorSpace`] defaults to
+    /// sRGB, mapping into the surface [`ColorSpace`]. Parameters are not validated to see if their
+    /// values are legal, or that the combination is supported.
+    ///
+    /// - `dimensions` pixel column and row count; must be zero or greater
+    /// - `cs` optional color space
     pub fn new_n32_premul(
         dimensions: impl Into<ISize>,
         cs: impl Into<Option<ColorSpace>>,
@@ -224,6 +313,10 @@ impl ImageInfo {
         })
     }
 
+    /// Creates [`ImageInfo`] from integral dimensions, an alpha-only color type, premultiplied
+    /// alpha, and no [`ColorSpace`].
+    ///
+    /// - `dimensions` pixel column and row count; must be zero or greater
     pub fn new_a8(dimensions: impl Into<ISize>) -> ImageInfo {
         let dimensions = dimensions.into();
         Self::construct(|ii| unsafe {
@@ -231,6 +324,11 @@ impl ImageInfo {
         })
     }
 
+    /// Creates [`ImageInfo`] from integral dimensions, an unknown color type, unknown alpha type,
+    /// and no [`ColorSpace`]. An [`ImageInfo`] used as a source does not draw, and one used as a
+    /// destination cannot be drawn to.
+    ///
+    /// - `dimensions` pixel column and row count; must be zero or greater
     pub fn new_unknown(dimensions: Option<ISize>) -> ImageInfo {
         let dimensions = dimensions.unwrap_or_default();
         Self::construct(|ii| unsafe {
@@ -238,55 +336,83 @@ impl ImageInfo {
         })
     }
 
+    /// Returns the pixel count in each row.
     pub fn width(&self) -> i32 {
         self.dimensions().width
     }
 
+    /// Returns the pixel row count.
     pub fn height(&self) -> i32 {
         self.dimensions().height
     }
 
+    /// Returns the color type.
     pub fn color_type(&self) -> ColorType {
         self.color_info().color_type()
     }
 
+    /// Returns the alpha type.
     pub fn alpha_type(&self) -> AlphaType {
         self.color_info().alpha_type()
     }
 
+    /// Returns [`ColorSpace`], the range of colors. The returned [`ColorSpace`] is immutable.
     pub fn color_space(&self) -> Option<ColorSpace> {
         ColorSpace::from_unshared_ptr(unsafe { self.native().colorSpace() })
     }
 
+    /// Returns true if either dimension is zero or smaller.
     pub fn is_empty(&self) -> bool {
         self.dimensions().is_empty()
     }
 
+    /// Returns the dimensionless [`ColorInfo`] that represents the same color type, alpha type,
+    /// and color space as this [`ImageInfo`].
     pub fn color_info(&self) -> &ColorInfo {
         Handle::from_native_ref(&self.native().fColorInfo)
     }
 
+    /// Returns true if the alpha type is set to hint that all pixels are opaque; their alpha value
+    /// is implicitly or explicitly 1.0. If true, and all pixels are not opaque, Skia may draw
+    /// incorrectly.
+    ///
+    /// This does not check if the color type allows alpha, or if any pixel value has transparency.
     pub fn is_opaque(&self) -> bool {
         self.color_info().is_opaque()
     }
 
+    /// Returns the integral size of [`Self::width()`] and [`Self::height()`].
     pub fn dimensions(&self) -> ISize {
         ISize::from_native_c(self.native().fDimensions)
     }
 
+    /// Returns the integral rectangle from the origin to [`Self::width()`] and [`Self::height()`].
     pub fn bounds(&self) -> IRect {
         IRect::from_size(self.dimensions())
     }
 
+    /// Returns true if the associated [`ColorSpace`] is not `None`, and the [`ColorSpace`] gamma
+    /// is approximately the same as sRGB.
     pub fn is_gamma_close_to_srgb(&self) -> bool {
         self.color_info().is_gamma_close_to_srgb()
     }
 
+    /// Creates [`ImageInfo`] with the same color type, color space, and alpha type, with dimensions
+    /// set to `new_dimensions`.
+    ///
+    /// - `new_dimensions` pixel column and row count; must be zero or greater
     #[must_use]
     pub fn with_dimensions(&self, new_dimensions: impl Into<ISize>) -> Self {
         Self::from_color_info(new_dimensions, self.color_info().clone())
     }
 
+    /// Creates [`ImageInfo`] with the same color type, color space, width, and height, with the
+    /// alpha type set to `new_alpha_type`.
+    ///
+    /// The created [`ImageInfo`] contains `new_alpha_type` even if it is incompatible with the
+    /// color type, in which case the alpha type in [`ImageInfo`] is ignored.
+    ///
+    /// - `new_alpha_type` new alpha type
     #[must_use]
     pub fn with_alpha_type(&self, new_alpha_type: AlphaType) -> Self {
         Self::from_color_info(
@@ -295,6 +421,10 @@ impl ImageInfo {
         )
     }
 
+    /// Creates [`ImageInfo`] with the same alpha type, color space, width, and height, with the
+    /// color type set to `new_color_type`.
+    ///
+    /// - `new_color_type` new color type
     #[must_use]
     pub fn with_color_type(&self, new_color_type: ColorType) -> Self {
         Self::from_color_info(
@@ -303,6 +433,10 @@ impl ImageInfo {
         )
     }
 
+    /// Creates [`ImageInfo`] with the same alpha type, color type, width, and height, with the
+    /// color space set to `new_color_space`. `new_color_space` may be `None`.
+    ///
+    /// - `new_color_space` optional color space
     #[must_use]
     pub fn with_color_space(&self, new_color_space: impl Into<Option<ColorSpace>>) -> Self {
         Self::construct(|ii| unsafe {
@@ -314,31 +448,59 @@ impl ImageInfo {
         })
     }
 
+    /// Returns the number of bytes per pixel required by the color type. Returns zero if the color
+    /// type is [`ColorType::Unknown`].
     pub fn bytes_per_pixel(&self) -> usize {
         self.color_info().bytes_per_pixel()
     }
 
+    /// Returns the bit shift converting row bytes to row pixels. Returns zero for
+    /// [`ColorType::Unknown`]. Returns one of: 0, 1, 2, 3; left shift to convert pixels to bytes.
     pub fn shift_per_pixel(&self) -> usize {
         self.color_info().shift_per_pixel()
     }
 
+    /// Returns the minimum number of bytes per row, computed from the pixel width and color type,
+    /// which specifies bytes per pixel. The bitmap maximum value for row bytes must fit in 31 bits.
     pub fn min_row_bytes(&self) -> usize {
         usize::try_from(self.width()).unwrap() * self.bytes_per_pixel()
     }
 
+    /// Returns the byte offset of a pixel from the pixel base address.
+    ///
+    /// Asserts in debug builds if `point` is outside of bounds. Does not assert if `row_bytes` is
+    /// smaller than [`Self::min_row_bytes()`], even though the result may be incorrect.
+    ///
+    /// - `point` pixel column and row; both must be within the image bounds
+    /// - `row_bytes` size of the pixel row or larger
     pub fn compute_offset(&self, point: impl Into<IPoint>, row_bytes: usize) -> usize {
         let point = point.into();
         unsafe { self.native().computeOffset(point.x, point.y, row_bytes) }
     }
 
+    /// Returns the storage required by the pixel array, given [`ImageInfo`] dimensions, color
+    /// type, and `row_bytes`. `row_bytes` is assumed to be at least [`Self::min_row_bytes()`].
+    ///
+    /// Returns zero if the height is zero. Returns `usize::MAX` if the answer exceeds the range of
+    /// `usize`.
+    ///
+    /// - `row_bytes` size of the pixel row or larger
     pub fn compute_byte_size(&self, row_bytes: usize) -> usize {
         unsafe { self.native().computeByteSize(row_bytes) }
     }
 
+    /// Returns the least storage required by the pixel buffer, using [`Self::min_row_bytes()`] to
+    /// compute the bytes for each pixel row.
+    ///
+    /// Returns zero if the height is zero. Returns `usize::MAX` if the answer exceeds the range of
+    /// `usize`.
     pub fn compute_min_byte_size(&self) -> usize {
         self.compute_byte_size(self.min_row_bytes())
     }
 
+    /// Returns true if `row_bytes` is valid for this [`ImageInfo`].
+    ///
+    /// - `row_bytes` size of the pixel row including padding
     pub fn valid_row_bytes(&self, row_bytes: usize) -> bool {
         if row_bytes < self.min_row_bytes() {
             return false;
@@ -348,12 +510,14 @@ impl ImageInfo {
         aligned_row_bytes == row_bytes
     }
 
+    /// Creates an empty [`ImageInfo`] with [`ColorType::Unknown`], [`AlphaType::Unknown`], a width
+    /// and height of zero, and no [`ColorSpace`].
     pub fn reset(&mut self) -> &mut Self {
         unsafe { sb::C_SkImageInfo_reset(self.native_mut()) };
         self
     }
 
-    /// Returns `true` if the `row_bytes` are valid for [ImageInfo] _and_ an image would fit into
+    /// Returns `true` if the `row_bytes` are valid for [`ImageInfo`] _and_ an image would fit into
     /// `pixels`.
     pub(crate) fn valid_pixels<P>(&self, row_bytes: usize, pixels: &[P]) -> bool {
         self.valid_row_bytes(row_bytes)

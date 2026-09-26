@@ -47,6 +47,9 @@ impl fmt::Debug for MemoryAllocator {
     }
 }
 
+/// Note: there is no notion of Borrowed or Adopted resources in the D3D backend,
+/// so Ganesh will ref `resource` once it's asked to wrap it.
+/// Clients are responsible for releasing their own ref to avoid memory leaks.
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct TextureResourceInfo {
@@ -104,6 +107,7 @@ impl From<ID3D12Resource> for TextureResourceInfo {
 #[derive(Clone, Debug)]
 pub struct FenceInfo {
     pub fence: ID3D12Fence,
+    /// signal value for the fence
     pub value: u64,
 }
 

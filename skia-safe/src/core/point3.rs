@@ -63,26 +63,47 @@ impl Mul<Point3> for scalar {
 }
 
 impl Point3 {
+    /// Sets `x`, `y`, and `z`.
+    ///
+    /// - `x` x-axis value
+    /// - `y` y-axis value
+    /// - `z` z-axis value
     pub const fn new(x: scalar, y: scalar, z: scalar) -> Self {
         Self { x, y, z }
     }
 
+    /// Sets `x`, `y`, and `z`.
+    ///
+    /// - `x` new value for `x`
+    /// - `y` new value for `y`
+    /// - `z` new value for `z`
     pub fn set(&mut self, x: scalar, y: scalar, z: scalar) {
         *self = Self::new(x, y, z);
     }
 
+    /// Returns the Euclidean distance from (0, 0, 0) to (`x`, `y`, `z`).
+    ///
+    /// - `x` x-axis value
+    /// - `y` y-axis value
+    /// - `z` z-axis value
     pub fn length_xyz(x: scalar, y: scalar, z: scalar) -> scalar {
         unsafe { SkPoint3::Length(x, y, z) }
     }
 
+    /// Returns the Euclidean distance from (0, 0, 0) to the point.
     pub fn length(&self) -> scalar {
         unsafe { SkPoint3::Length(self.x, self.y, self.z) }
     }
 
+    /// Sets the point (vector) to be unit-length in the same direction as it already points. If
+    /// the point has a degenerate length (i.e., nearly 0) then sets it to (0, 0, 0) and returns
+    /// false; otherwise returns true.
     pub fn normalize(&mut self) -> bool {
         unsafe { self.native_mut().normalize() }
     }
 
+    /// Returns a new point that is unit-length in the same direction as this one, or `None` if the
+    /// point has a degenerate length (i.e., nearly 0).
     #[must_use]
     pub fn normalized(&self) -> Option<Self> {
         let mut normalized = *self;
@@ -90,27 +111,45 @@ impl Point3 {
     }
 
     // TODO: with_scale()?
+    /// Returns a new point whose x, y, and z coordinates are scaled.
+    ///
+    /// - `scale` factor to multiply the point by
     #[must_use]
     pub fn scaled(&self, scale: scalar) -> Self {
         Self::new(scale * self.x, scale * self.y, scale * self.z)
     }
 
+    /// Scales the point's coordinates by `value`.
+    ///
+    /// - `value` factor to multiply the point by
     pub fn scale(&mut self, value: scalar) {
         *self = self.scaled(value);
     }
 
+    /// Returns true if `x`, `y`, and `z` are measurable values.
     pub fn is_finite(&self) -> bool {
         is_finite(&[self.x, self.y, self.z])
     }
 
+    /// Returns the dot product of `a` and `b`, treating them as 3D vectors.
+    ///
+    /// - `a` left side of dot product
+    /// - `b` right side of dot product
     pub fn dot_product(a: Self, b: Self) -> scalar {
         a.x * b.x + a.y * b.y + a.z * b.z
     }
 
+    /// Returns the dot product of the point and `vec`, treating them as 3D vectors.
+    ///
+    /// - `vec` right side of dot product
     pub fn dot(&self, vec: Self) -> scalar {
         Self::dot_product(*self, vec)
     }
 
+    /// Returns the cross product of `a` and `b`, treating them as 3D vectors.
+    ///
+    /// - `a` left side of cross product
+    /// - `b` right side of cross product
     #[allow(clippy::many_single_char_names)]
     pub fn cross_product(a: Self, b: Self) -> Self {
         let x = a.y * b.z - a.z * b.y;
@@ -119,6 +158,9 @@ impl Point3 {
         Self { x, y, z }
     }
 
+    /// Returns the cross product of the point and `vec`, treating them as 3D vectors.
+    ///
+    /// - `vec` right side of cross product
     #[must_use]
     pub fn cross(&self, vec: Self) -> Self {
         Self::cross_product(*self, vec)

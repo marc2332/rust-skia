@@ -51,6 +51,7 @@ impl EncodedOrigin {
         m
     }
 
+    /// Return a matrix equal to [`EncodedOrigin::to_matrix()`]`(self, w, h).invert()`.
     pub fn to_matrix_inverse(self, size: impl Into<ISize>) -> Matrix {
         let size = size.into();
         let mut m = Matrix::default();

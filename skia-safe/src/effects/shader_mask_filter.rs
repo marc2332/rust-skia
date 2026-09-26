@@ -1,3 +1,6 @@
+//! Deprecated factory function for creating a [`crate::MaskFilter`] from a [`crate::Shader`].
+//! Shader mask filters will be removed in an upcoming Skia release.
+
 use crate::{MaskFilter, Shader, prelude::*};
 use skia_bindings as sb;
 

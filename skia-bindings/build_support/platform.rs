@@ -12,12 +12,14 @@ use crate::build_support::features::feature;
 
 pub mod alpine;
 pub mod android;
+mod apple;
 pub mod emscripten;
 mod generic;
 pub mod ios;
 pub mod linux;
 pub mod macos;
 mod ohos;
+pub mod visionos;
 mod windows;
 
 /// Returns the list of redundant features for the given platform.
@@ -53,7 +55,8 @@ pub fn gn_args(config: &BuildConfiguration, mut builder: GnArgsBuilder) -> Vec<(
 
 #[derive(Clone, Debug)]
 pub struct BindgenAndCCArgs {
-    pub args: Vec<String>,
+    pub shared_args: Vec<String>,
+    pub bindgen_only_args: Vec<String>,
     pub target_override: Option<String>,
 }
 
@@ -78,6 +81,15 @@ pub fn filter_features(
 pub trait PlatformDetails {
     /// We need this information relatively early on to help parameterizing GN.
     fn uses_freetype(&self) -> bool;
+
+    /// Whether the platform supplies its own compiler tools (`cc`/`cxx`/`ar`)
+    /// through `gn_args`. When `true`, the default compiler tools derived from
+    /// the host environment (`CC`/`CXX`) must not be written, as they would
+    /// conflict and cannot build for the target anyway.
+    fn provides_tools(&self) -> bool {
+        false
+    }
+
     fn gn_args(&self, config: &BuildConfiguration, builder: &mut GnArgsBuilder);
     fn bindgen_args(&self, _target: &Target, _builder: &mut BindgenArgsBuilder) {}
     fn link_libraries(&self, features: &Features) -> Vec<String>;
@@ -90,6 +102,10 @@ pub trait PlatformDetails {
     }
 }
 
+pub fn provides_tools(target: &Target) -> bool {
+    details(target).provides_tools()
+}
+
 fn details(target: &Target) -> &dyn PlatformDetails {
     let host = cargo::host();
     match target.as_strs() {
@@ -97,6 +113,7 @@ fn details(target: &Target) -> &dyn PlatformDetails {
         (_, "linux", "android", _) | (_, "linux", "androideabi", _) => &android::Android,
         (_, "apple", "darwin", _) => &macos::MacOs,
         (_, "apple", "ios", _) => &ios::Ios,
+        (_, "apple", "visionos", _) => &visionos::VisionOs,
         (_, _, "windows", Some("msvc")) if host.is_windows() => &windows::Msvc,
         (_, _, "windows", _) => &windows::Generic,
         (_, "unknown", "linux", Some("ohos")) => &ohos::OpenHarmony,
@@ -198,7 +215,8 @@ pub struct BindgenArgsBuilder {
     /// sysroot if set explicitly.
     sysroot: Option<String>,
     sysroot_prefix: String,
-    bindgen_and_cc_args: Vec<String>,
+    shared_args: Vec<String>,
+    bindgen_only_args: Vec<String>,
     target_override: Option<String>,
 }
 
@@ -207,7 +225,8 @@ impl BindgenArgsBuilder {
         Self {
             sysroot: sysroot.map(|s| s.into()),
             sysroot_prefix: "--sysroot=".into(),
-            bindgen_and_cc_args: Vec::new(),
+            shared_args: Vec::new(),
+            bindgen_only_args: Vec::new(),
             target_override: None,
         }
     }
@@ -229,7 +248,7 @@ impl BindgenArgsBuilder {
 
     /// Set a Bindgen Clang arg.
     pub fn arg(&mut self, arg: impl Into<String>) -> &mut Self {
-        self.bindgen_and_cc_args.push(arg.into());
+        self.shared_args.push(arg.into());
         self
     }
 
@@ -240,7 +259,12 @@ impl BindgenArgsBuilder {
         });
     }
 
-    // TODO: only return one Vec<>
+    /// Set an argument used only by Bindgen's Clang invocation.
+    pub fn bindgen_only_arg(&mut self, arg: impl Into<String>) -> &mut Self {
+        self.bindgen_only_args.push(arg.into());
+        self
+    }
+
     pub fn into_bindgen_and_cc_args(mut self) -> BindgenAndCCArgs {
         if let Some(sysroot) = &self.sysroot {
             let sysroot_arg = format!("{}{}", self.sysroot_prefix, sysroot);
@@ -248,7 +272,8 @@ impl BindgenArgsBuilder {
         }
 
         BindgenAndCCArgs {
-            args: self.bindgen_and_cc_args,
+            shared_args: self.shared_args,
+            bindgen_only_args: self.bindgen_only_args,
             target_override: self.target_override,
         }
     }

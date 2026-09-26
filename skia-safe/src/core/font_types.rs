@@ -7,11 +7,15 @@ use crate::GlyphId;
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
 #[repr(i32)]
 pub enum TextEncoding {
+    /// Uses bytes to represent UTF-8 or ASCII.
     #[default]
     UTF8 = SkTextEncoding::kUTF8 as _,
+    /// Uses two byte words to represent most of Unicode.
     UTF16 = SkTextEncoding::kUTF16 as _,
+    /// Uses four byte words to represent all of Unicode.
     UTF32 = SkTextEncoding::kUTF32 as _,
     // TODO: enum rewriter: ID -> Id
+    /// Uses two byte words to represent glyph indices.
     GlyphId = SkTextEncoding::kGlyphID as _,
 }
 
@@ -20,7 +24,7 @@ native_transmutable!(SkTextEncoding, TextEncoding);
 /// Trait representing encoded text.
 ///
 /// Functions that expect `EncodedText` may be passed `String`, `&String``, `&str` representing
-/// UTF-8 encoded text. In addition to that, &[u16], [u16], or &[GlyphId], [GlyphId], are
+/// UTF-8 encoded text. In addition to that, `&[u16]`, `[u16]`, or `&[GlyphId]`, `[GlyphId]`, are
 /// interpreted as `GlyphId` slices.
 ///
 /// To use UTF16 or UTF32 encodings, use [`as_utf16_unchecked`] or

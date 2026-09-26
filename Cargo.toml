@@ -5,8 +5,8 @@ members = [
     "skia-svg-macros",
     "skia-bindings",
     "skia-org",
+    "skia-icon",
     "mk-workflows",
-    "comment-converter",
 ]
 
 [workspace.package]

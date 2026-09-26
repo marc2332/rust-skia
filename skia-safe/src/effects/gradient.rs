@@ -1,3 +1,6 @@
+//! Gradient specifications and shader factory functions for linear, radial, and two-point
+//! conical gradients.
+
 use crate::{Color4f, ColorSpace, TileMode, scalar};
 use skia_bindings as sb;
 
@@ -16,6 +19,9 @@ pub struct Interpolation {
 native_transmutable!(sb::SkGradient_Interpolation, Interpolation);
 
 pub mod interpolation {
+    //! Types that specify how colors are interpolated in a gradient, including the
+    //! interpolation color space, premultiplication mode, and hue method.
+
     use skia_bindings as sb;
 
     /// Whether to interpolate colors in premultiplied alpha space.
@@ -75,11 +81,11 @@ pub struct Colors<'a> {
 impl<'a> Colors<'a> {
     /// Create gradient colors with explicit positions.
     ///
-    /// - `colors`: The colors for the gradient.
-    /// - `pos`: Relative positions of each color (0.0 to 1.0). Must be strictly increasing.
+    /// - `colors` The colors for the gradient.
+    /// - `pos` Relative positions of each color (0.0 to 1.0). Must be strictly increasing.
     ///          If `None`, colors are distributed evenly.
-    /// - `tile_mode`: Tiling mode for the gradient.
-    /// - `color_space`: Optional color space. If `None`, colors are treated as sRGB.
+    /// - `tile_mode` Tiling mode for the gradient.
+    /// - `color_space` Optional color space. If `None`, colors are treated as sRGB.
     pub fn new(
         colors: &'a [Color4f],
         pos: Option<&'a [scalar]>,
@@ -168,9 +174,9 @@ pub mod shaders {
 
     /// Returns a shader that generates a linear gradient between the two specified points.
     ///
-    /// - `points`: Array of 2 points, the end-points of the line segment
-    /// - `gradient`: Description of the colors and interpolation method
-    /// - `local_matrix`: Optional local matrix
+    /// - `points` Array of 2 points, the end-points of the line segment
+    /// - `gradient` Description of the colors and interpolation method
+    /// - `local_matrix` Optional local matrix
     pub fn linear_gradient<'a>(
         points: (impl Into<Point>, impl Into<Point>),
         gradient: &Gradient<'_>,
@@ -200,10 +206,10 @@ pub mod shaders {
 
     /// Returns a shader that generates a radial gradient given the center and radius.
     ///
-    /// - `center`: The center of the circle for this gradient
-    /// - `radius`: Must be positive. The radius of the circle for this gradient
-    /// - `gradient`: Description of the colors and interpolation method
-    /// - `local_matrix`: Optional local matrix
+    /// - `center` The center of the circle for this gradient
+    /// - `radius` Must be positive. The radius of the circle for this gradient
+    /// - `gradient` Description of the colors and interpolation method
+    /// - `local_matrix` Optional local matrix
     pub fn radial_gradient<'a>(
         (center, radius): (impl Into<Point>, scalar),
         gradient: &Gradient<'_>,
@@ -237,12 +243,12 @@ pub mod shaders {
     /// The gradient interprets the two circles according to the following HTML spec:
     /// <http://dev.w3.org/html5/2dcontext/#dom-context-2d-createradialgradient>
     ///
-    /// - `start`: The center of the start circle
-    /// - `start_radius`: Must be positive. The radius of the start circle
-    /// - `end`: The center of the end circle
-    /// - `end_radius`: Must be positive. The radius of the end circle
-    /// - `gradient`: Description of the colors and interpolation method
-    /// - `local_matrix`: Optional local matrix
+    /// - `start` The center of the start circle
+    /// - `start_radius` Must be positive. The radius of the start circle
+    /// - `end` The center of the end circle
+    /// - `end_radius` Must be positive. The radius of the end circle
+    /// - `gradient` Description of the colors and interpolation method
+    /// - `local_matrix` Optional local matrix
     #[allow(clippy::too_many_arguments)]
     pub fn two_point_conical_gradient<'a>(
         (start, start_radius): (impl Into<Point>, scalar),
@@ -282,11 +288,11 @@ pub mod shaders {
     /// degrees, similar to the CSS conic-gradient semantics. 0 degrees means horizontal
     /// positive x axis. The start angle must be less than the end angle.
     ///
-    /// - `center`: The center of the sweep
-    /// - `start_angle`: Start of the angular range, corresponding to pos == 0
-    /// - `end_angle`: End of the angular range, corresponding to pos == 1
-    /// - `gradient`: Description of the colors and interpolation method
-    /// - `local_matrix`: Optional local matrix
+    /// - `center` The center of the sweep
+    /// - `start_angle` Start of the angular range, corresponding to pos == 0
+    /// - `end_angle` End of the angular range, corresponding to pos == 1
+    /// - `gradient` Description of the colors and interpolation method
+    /// - `local_matrix` Optional local matrix
     pub fn sweep_gradient<'a>(
         center: impl Into<Point>,
         (start_angle, end_angle): (scalar, scalar),

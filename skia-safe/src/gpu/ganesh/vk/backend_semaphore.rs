@@ -6,6 +6,7 @@ use crate::{
 };
 
 pub mod backend_semaphores {
+    //! Vulkan-specific helpers for constructing and querying [`crate::gpu::BackendSemaphore`].
     use super::*;
 
     /// Returns a [`BackendSemaphore`] that wraps the given Vulkan

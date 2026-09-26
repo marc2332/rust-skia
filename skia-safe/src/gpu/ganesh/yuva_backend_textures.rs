@@ -3,7 +3,7 @@ use crate::{YUVAInfo, YUVColorSpace, prelude::*};
 use skia_bindings::{self as sb, GrYUVABackendTextureInfo, GrYUVABackendTextures};
 use std::{fmt, iter};
 
-/// A description of a set [BackendTexture]s that hold the planar data described by a [YUVAInfo].
+/// A description of a set [`BackendTexture`]s that hold the planar data described by a [`YUVAInfo`].
 pub type YUVABackendTextureInfo = Handle<GrYUVABackendTextureInfo>;
 unsafe_send_sync!(YUVABackendTextureInfo);
 
@@ -40,11 +40,11 @@ impl fmt::Debug for YUVABackendTextureInfo {
 impl YUVABackendTextureInfo {
     pub const MAX_PLANES: usize = YUVAInfo::MAX_PLANES;
 
-    /// Initializes a [YUVABackendTextureInfo] to describe a set of textures that can store the
-    /// planes indicated by the [YUVAInfo]. The texture dimensions are taken from the [YUVAInfo]'s
+    /// Initializes a [`YUVABackendTextureInfo`] to describe a set of textures that can store the
+    /// planes indicated by the [`YUVAInfo`]. The texture dimensions are taken from the [`YUVAInfo`]'s
     /// plane dimensions. All the described textures share a common origin. The planar image this
     /// describes will be mip mapped if all the textures are individually mip mapped as indicated
-    /// by [Mipmapped]. This will return [None] if the passed formats' channels don't agree with [YUVAInfo].
+    /// by [`Mipmapped`]. This will return `None` if the passed formats' channels don't agree with [`YUVAInfo`].
     pub fn new(
         info: &YUVAInfo,
         formats: &[BackendFormat],
@@ -67,23 +67,27 @@ impl YUVABackendTextureInfo {
         Self::native_is_valid(&n).then(|| Self::from_native_c(n))
     }
 
+    /// The [`YUVAInfo`] describing the planar layout.
     pub fn yuva_info(&self) -> &YUVAInfo {
         YUVAInfo::from_native_ref(&self.native().fYUVAInfo)
     }
 
+    /// The [`YUVColorSpace`] of the planar layout.
     pub fn yuv_color_space(&self) -> YUVColorSpace {
         self.yuva_info().yuv_color_space()
     }
 
+    /// Whether the described textures are mipmapped.
     pub fn mipmapped(&self) -> Mipmapped {
         self.native().fMipmapped
     }
 
+    /// The origin that all the described textures share.
     pub fn texture_origin(&self) -> SurfaceOrigin {
         self.native().fTextureOrigin
     }
 
-    /// The number of [crate::Pixmap] planes.
+    /// The number of [`crate::Pixmap`] planes.
     pub fn num_planes(&self) -> usize {
         self.yuva_info().num_planes()
     }
@@ -102,13 +106,13 @@ impl YUVABackendTextureInfo {
         }
     }
 
-    /// Returns `true` if this has been configured with a valid [YUVAInfo] with compatible texture.
+    /// Returns `true` if this has been configured with a valid [`YUVAInfo`] with compatible texture.
     pub(crate) fn native_is_valid(info: &GrYUVABackendTextureInfo) -> bool {
         YUVAInfo::native_is_valid(&info.fYUVAInfo)
     }
 }
 
-/// A set of [BackendTexture]s that hold the planar data for an image described a [YUVAInfo].
+/// A set of [`BackendTexture`]s that hold the planar data for an image described a [`YUVAInfo`].
 ///
 // Because BackendTexture itself is a RefHandle, we need to put GrYUVABackendTextures on the heap, too.
 // See <https://github.com/rust-skia/rust-skia/issues/1246>
@@ -132,6 +136,14 @@ impl fmt::Debug for YUVABackendTextures {
 }
 
 impl YUVABackendTextures {
+    /// Initializes a set of [`BackendTexture`]s that can store the planes indicated by the
+    /// [`YUVAInfo`]. The texture dimensions must match the [`YUVAInfo`]'s plane dimensions.
+    /// All the textures share a common origin. Returns `None` if the number of `textures`
+    /// does not match the number of planes or the resulting set is not valid.
+    ///
+    /// - `info` the [`YUVAInfo`] describing the planar image
+    /// - `textures` one [`BackendTexture`] per plane, in plane order
+    /// - `texture_origin` the origin that all textures share
     pub fn new(
         info: &YUVAInfo,
         textures: &[BackendTexture],
@@ -159,6 +171,7 @@ impl YUVABackendTextures {
         Self::native_is_valid(textures.native()).then_some(textures)
     }
 
+    /// Copies of all the plane textures, in plane order.
     pub fn textures(&self) -> Vec<BackendTexture> {
         unsafe {
             let textures_ptr = sb::C_GrYUVABackendTextures_textures(self.native());
@@ -173,18 +186,22 @@ impl YUVABackendTextures {
         }
     }
 
+    /// A copy of the ith plane texture, or `None` if `i` is out of range.
     pub fn texture(&self, i: usize) -> Option<BackendTexture> {
         self.textures().get(i).cloned()
     }
 
+    /// The [`YUVAInfo`] describing the planar layout.
     pub fn yuva_info(&self) -> &YUVAInfo {
         YUVAInfo::from_native_ref(unsafe { &*sb::C_GrYUVABackendTextures_yuvaInfo(self.native()) })
     }
 
+    /// The number of planes.
     pub fn num_planes(&self) -> usize {
         self.yuva_info().num_planes()
     }
 
+    /// The origin that all the textures share.
     pub fn texture_origin(&self) -> SurfaceOrigin {
         unsafe { sb::C_GrYUVABackendTextures_textureOrigin(self.native()) }
     }

@@ -1,13 +1,23 @@
+//! GL types for interacting with resources created externally to Skia, including
+//! [`TextureInfo`], [`Format`], and [`Standard`].
+
 use crate::{gpu, prelude::*};
 use skia_bindings::{self as sb, GrGLFramebufferInfo, GrGLSurfaceInfo, GrGLTextureInfo};
 
+/// The supported GL formats represented as an enum. Actual support by [`crate::gpu::DirectContext`]
+/// depends on GL context version and extensions.
 pub use skia_bindings::GrGLFormat as Format;
 variant_name!(Format::ALPHA8);
+/// Classifies GL contexts by which standard they implement (currently as OpenGL vs. OpenGL ES).
 pub use skia_bindings::GrGLStandard as Standard;
 variant_name!(Standard::GLES);
 pub use skia_bindings::GrGLenum as Enum;
 pub use skia_bindings::GrGLuint as UInt;
 
+/// Types for interacting with GL resources created externally to Skia. `GrBackendObject`s for GL
+/// textures are really const `GrGLTexture`*. The `format` here should be a sized, internal format
+/// for the texture. We will try to use the sized format if the GL Context supports it, otherwise
+/// we will internally fall back to using the base internal formats.
 #[derive(Copy, Clone, Eq, Debug)]
 #[repr(C)]
 pub struct TextureInfo {
@@ -109,10 +119,14 @@ impl Default for SurfaceInfo {
 }
 
 bitflags! {
+    /// A [`crate::gpu::DirectContext`]'s cache of backend context state can be partially invalidated.
+    /// These flags are specific to the GL backend and we'd add a new set for an alternative backend.
     #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct BackendState: u32 {
         const RENDER_TARGET = sb::GrGLBackendState_kRenderTarget_GrGLBackendState as _;
+        /// Also includes samplers bound to texture units.
         const TEXTURE_BINDING = sb::GrGLBackendState_kTextureBinding_GrGLBackendState as _;
+        /// View state stands for scissor and viewport
         const VIEW = sb::GrGLBackendState_kView_GrGLBackendState as _;
         const BLEND = sb::GrGLBackendState_kBlend_GrGLBackendState as _;
         const MSAA_ENABLE = sb::GrGLBackendState_kMSAAEnable_GrGLBackendState as _;

@@ -2,10 +2,9 @@ use std::fmt;
 
 use skia_bindings::{self as sb, GrBackendDrawableInfo};
 
-use crate::{
-    gpu::{BackendAPI, vk},
-    prelude::*,
-};
+use crate::{gpu::vk, prelude::*};
+
+use super::super::types::BackendApi;
 
 pub type BackendDrawableInfo = Handle<GrBackendDrawableInfo>;
 unsafe_send_sync!(BackendDrawableInfo);
@@ -41,7 +40,7 @@ impl BackendDrawableInfo {
         unsafe { sb::C_GrBackendDrawableInfo_isValid(self.native()) }
     }
 
-    pub fn backend(&self) -> BackendAPI {
+    pub fn backend(&self) -> BackendApi {
         unsafe { sb::C_GrBackendDrawableInfo_backend(self.native()) }
     }
 

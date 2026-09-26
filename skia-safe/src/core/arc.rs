@@ -1,3 +1,6 @@
+//! Represents an arc along an oval boundary, or a closed wedge of the oval, used with
+//! [`crate::Canvas::draw_arc_2()`].
+
 use skia_bindings as sb;
 
 use crate::{Rect, scalar};

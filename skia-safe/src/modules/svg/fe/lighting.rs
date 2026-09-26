@@ -1,3 +1,4 @@
+//! SVG lighting filter effects (`feDiffuseLighting` and `feSpecularLighting`).
 use super::{DebugAttributes, NodeSubtype};
 use crate::{impl_default_make, prelude::*, scalar};
 use skia_bindings as sb;

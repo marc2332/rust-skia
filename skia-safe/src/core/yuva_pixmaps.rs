@@ -1,3 +1,6 @@
+//! Describes and stores the [`crate::Pixmap`] planes of a YUVA image: [`YUVAPixmapInfo`] specifies
+//! the plane layout, [`YUVAPixmaps`] stores the pixel data.
+
 use crate::{ColorType, Data, ImageInfo, Pixmap, YUVAInfo, YUVColorSpace, prelude::*};
 use skia_bindings::{self as sb, SkYUVAPixmapInfo, SkYUVAPixmaps};
 use std::{ffi::c_void, fmt, ptr};
@@ -7,7 +10,7 @@ use yuva_pixmap_info::SupportedDataTypes;
 pub use yuva_pixmap_info::DataType;
 variant_name!(DataType::Float16);
 
-/// [YUVAInfo] combined with per-plane [ColorType]s and row bytes. Fully specifies the [Pixmap]`s
+/// [`YUVAInfo`] combined with per-plane [`ColorType`]s and row bytes. Fully specifies the [`Pixmap`]`s
 /// for a YUVA image without the actual pixel memory and data.
 pub type YUVAPixmapInfo = Handle<SkYUVAPixmapInfo>;
 unsafe_send_sync!(YUVAPixmapInfo);
@@ -41,13 +44,13 @@ impl YUVAPixmapInfo {
     pub const MAX_PLANES: usize = sb::SkYUVAInfo_kMaxPlanes as _;
     pub const DATA_TYPE_CNT: usize = DataType::Last as _;
 
-    /// Initializes the [YUVAPixmapInfo] from a [YUVAInfo] with per-plane color types and row bytes.
-    /// This will return [None] if the colorTypes aren't compatible with the [YUVAInfo] or if a
+    /// Initializes the [`YUVAPixmapInfo`] from a [`YUVAInfo`] with per-plane color types and row bytes.
+    /// This will return `None` if the colorTypes aren't compatible with the [`YUVAInfo`] or if a
     /// rowBytes entry is not valid for the plane dimensions and color type. Color type and
-    /// row byte values beyond the number of planes in [YUVAInfo] are ignored. All [ColorType]s
-    /// must have the same [DataType] or this will return [None].
+    /// row byte values beyond the number of planes in [`YUVAInfo`] are ignored. All [`ColorType`]s
+    /// must have the same [`DataType`] or this will return `None`.
     ///
-    /// If `rowBytes` is [None] then bpp*width is assumed for each plane.
+    /// If `rowBytes` is `None` then bpp*width is assumed for each plane.
     pub fn new(
         info: &YUVAInfo,
         color_types: &[ColorType],
@@ -84,8 +87,8 @@ impl YUVAPixmapInfo {
         Self::native_is_valid(&info).then(|| Self::from_native_c(info))
     }
 
-    /// Like above but uses [yuva_pixmap_info::default_color_type_for_data_type] to determine each plane's [ColorType]. If
-    /// `rowBytes` is [None] then bpp*width is assumed for each plane.
+    /// Like above but uses [`yuva_pixmap_info::default_color_type_for_data_type`] to determine each plane's [`ColorType`]. If
+    /// `rowBytes` is `None` then bpp*width is assumed for each plane.
     pub fn from_data_type(
         info: &YUVAInfo,
         data_type: DataType,
@@ -114,7 +117,7 @@ impl YUVAPixmapInfo {
         self.yuva_info().yuv_color_space()
     }
 
-    /// The number of [Pixmap] planes.
+    /// The number of [`Pixmap`] planes.
     pub fn num_planes(&self) -> usize {
         self.yuva_info().num_planes()
     }
@@ -126,7 +129,7 @@ impl YUVAPixmapInfo {
 
     /// Row bytes for the ith plane.
     ///
-    /// Returns [None] if `i` is out of range.
+    /// Returns `None` if `i` is out of range.
     pub fn row_bytes(&self, i: usize) -> Option<usize> {
         (i < self.num_planes()).then(|| unsafe {
             sb::C_SkYUVAPixmapInfo_rowBytes(self.native(), i.try_into().unwrap())
@@ -140,7 +143,7 @@ impl YUVAPixmapInfo {
 
     /// Image info for the ith plane.
     ///
-    /// Returns [None] if `i` is out of range.
+    /// Returns `None` if `i` is out of range.
     pub fn plane_info(&self, i: usize) -> Option<&ImageInfo> {
         (i < self.num_planes()).then(|| {
             ImageInfo::from_native_ref(unsafe {
@@ -155,7 +158,7 @@ impl YUVAPixmapInfo {
     }
 
     /// Determine size to allocate for all planes. Optionally retrieves the per-plane sizes in
-    /// planeSizes if not [None]. If total size overflows will return SIZE_MAX and set all
+    /// planeSizes if not `None`. If total size overflows will return SIZE_MAX and set all
     /// `plane_sizes` to SIZE_MAX.
     pub fn compute_total_bytes(
         &self,
@@ -187,7 +190,7 @@ impl YUVAPixmapInfo {
         }
     }
 
-    /// Is this valid and does it use color types allowed by the passed [SupportedDataTypes]?
+    /// Is this valid and does it use color types allowed by the passed [`SupportedDataTypes`]?
     pub fn is_supported(&self, data_types: &SupportedDataTypes) -> bool {
         unsafe { self.native().isSupported(data_types.native()) }
     }
@@ -201,7 +204,7 @@ impl YUVAPixmapInfo {
             .then(|| YUVAPixmapInfo::from_native_c(pixmap_info))
     }
 
-    /// Returns `true` if this has been configured with a non-empty dimensioned [YUVAInfo] with
+    /// Returns `true` if this has been configured with a non-empty dimensioned [`YUVAInfo`] with
     /// compatible color types and row bytes.
     fn native_is_valid(info: *const SkYUVAPixmapInfo) -> bool {
         unsafe { sb::C_SkYUVAPixmapInfo_isValid(info) }
@@ -213,7 +216,7 @@ impl YUVAPixmapInfo {
     }
 }
 
-/// Helper to store [Pixmap] planes as described by a [YUVAPixmapInfo]. Can be responsible for
+/// Helper to store [`Pixmap`] planes as described by a [`YUVAPixmapInfo`]. Can be responsible for
 /// allocating/freeing memory for pixmaps or use external memory.
 pub type YUVAPixmaps = Handle<SkYUVAPixmaps>;
 unsafe_send_sync!(YUVAPixmaps);
@@ -247,7 +250,7 @@ impl YUVAPixmaps {
         ColorType::from_native_c(unsafe { sb::SkYUVAPixmaps::RecommendedRGBAColorType(dt) })
     }
 
-    /// Allocate space for pixmaps' pixels in the [YUVAPixmaps].
+    /// Allocate space for pixmaps' pixels in the [`YUVAPixmaps`].
     pub fn allocate(info: &YUVAPixmapInfo) -> Option<Self> {
         Self::try_construct(|pixmaps| unsafe {
             sb::C_SkYUVAPixmaps_Allocate(pixmaps, info.native());
@@ -255,8 +258,8 @@ impl YUVAPixmaps {
         })
     }
 
-    /// Use storage in [Data] as backing store for pixmaps' pixels. [Data] is retained by the
-    /// [YUVAPixmaps].
+    /// Use storage in [`Data`] as backing store for pixmaps' pixels. [`Data`] is retained by the
+    /// [`YUVAPixmaps`].
     pub fn from_data(info: &YUVAPixmapInfo, data: impl Into<Data>) -> Option<Self> {
         Self::try_construct(|pixmaps| unsafe {
             sb::C_SkYUVAPixmaps_FromData(pixmaps, info.native(), data.into().into_ptr());
@@ -266,7 +269,7 @@ impl YUVAPixmaps {
 
     /// Use passed in memory as backing store for pixmaps' pixels. Caller must ensure memory remains
     /// allocated while pixmaps are in use. There must be at least
-    /// [YUVAPixmapInfo::computeTotalBytes(&self)] allocated starting at memory.
+    /// [`YUVAPixmapInfo::compute_total_bytes()`] allocated starting at memory.
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn from_external_memory(info: &YUVAPixmapInfo, memory: *mut c_void) -> Option<Self> {
         unsafe {
@@ -277,9 +280,9 @@ impl YUVAPixmaps {
         }
     }
 
-    /// Wraps existing `Pixmap`s. The [YUVAPixmaps] will have no ownership of the [Pixmap]s' pixel
-    /// memory so the caller must ensure it remains valid. Will return [None] if
-    /// the [YUVAInfo] isn't compatible with the [Pixmap] array (number of planes, plane dimensions,
+    /// Wraps existing `Pixmap`s. The [`YUVAPixmaps`] will have no ownership of the [`Pixmap`]s' pixel
+    /// memory so the caller must ensure it remains valid. Will return `None` if
+    /// the [`YUVAInfo`] isn't compatible with the [`Pixmap`] array (number of planes, plane dimensions,
     /// sufficient color channels in planes, ...).
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn from_external_pixmaps(
@@ -313,7 +316,7 @@ impl YUVAPixmaps {
         self.yuva_info().num_planes()
     }
 
-    /// Access the [Pixmap] planes.
+    /// Access the [`Pixmap`] planes.
     pub fn planes(&self) -> &[Pixmap] {
         unsafe {
             let planes = Pixmap::from_native_ptr(sb::C_SkYUVAPixmaps_planes(self.native()));
@@ -321,7 +324,7 @@ impl YUVAPixmaps {
         }
     }
 
-    /// Get the ith [Pixmap] plane.
+    /// Get the ith [`Pixmap`] plane.
     ///
     /// Panics if `i` is out of range.
     pub fn plane(&self, i: usize) -> &Pixmap {
@@ -334,6 +337,7 @@ impl YUVAPixmaps {
 }
 
 pub mod yuva_pixmap_info {
+    //! Data types and supported data types for the planes of a [`crate::YUVAPixmapInfo`].
     use crate::{ColorType, prelude::*};
     use skia_bindings::{self as sb, SkYUVAPixmapInfo_SupportedDataTypes};
     use std::fmt;
@@ -372,19 +376,19 @@ pub mod yuva_pixmap_info {
     }
 
     impl SupportedDataTypes {
-        /// All legal combinations of [PlaneConfig] and [DataType] are supported.
+        /// All legal combinations of [`PlaneConfig`] and [`DataType`] are supported.
         pub fn all() -> Self {
             Self::construct(|sdt| unsafe { sb::C_SkYUVAPixmapInfo_SupportedDataTypes_All(sdt) })
         }
 
         /// Checks whether there is a supported combination of color types for planes structured
-        /// as indicated by [PlaneConfig] with channel data types as indicated by [DataType].
+        /// as indicated by [`PlaneConfig`] with channel data types as indicated by [`DataType`].
         pub fn supported(&self, pc: PlaneConfig, dt: DataType) -> bool {
             unsafe { sb::C_SkYUVAPixmapInfo_SupportedDataTypes_supported(self.native(), pc, dt) }
         }
 
         /// Update to add support for pixmaps with `num_channels` channels where each channel is
-        /// represented as [DataType].
+        /// represented as [`DataType`].
         pub fn enable_data_type(&mut self, dt: DataType, num_channels: usize) {
             unsafe {
                 self.native_mut()
@@ -393,18 +397,18 @@ pub mod yuva_pixmap_info {
         }
     }
 
-    /// Gets the default [ColorType] to use with `num_channels` channels, each represented as [DataType].
-    /// Returns [ColorType::Unknown] if no such color type.
+    /// Gets the default [`ColorType`] to use with `num_channels` channels, each represented as [`DataType`].
+    /// Returns [`ColorType::Unknown`] if no such color type.
     pub fn default_color_type_for_data_type(dt: DataType, num_channels: usize) -> ColorType {
         ColorType::from_native_c(unsafe {
             sb::C_SkYUVAPixmapInfo_DefaultColorTypeForDataType(dt, num_channels.try_into().unwrap())
         })
     }
 
-    /// If the [ColorType] is supported for YUVA pixmaps this will return the number of YUVA channels
-    /// that can be stored in a plane of this color type and what the [DataType] is of those channels.
-    /// If the [ColorType] is not supported as a YUVA plane the number of channels is reported as 0
-    /// and the [DataType] returned should be ignored.
+    /// If the [`ColorType`] is supported for YUVA pixmaps this will return the number of YUVA channels
+    /// that can be stored in a plane of this color type and what the [`DataType`] is of those channels.
+    /// If the [`ColorType`] is not supported as a YUVA plane the number of channels is reported as 0
+    /// and the [`DataType`] returned should be ignored.
     pub fn num_channels_and_data_type(color_type: ColorType) -> (usize, DataType) {
         let mut data_type = DataType::Float16;
         let channels = unsafe {

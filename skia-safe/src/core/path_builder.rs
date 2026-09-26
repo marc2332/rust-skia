@@ -1,3 +1,6 @@
+//! Helper to build a [`crate::Path`] incrementally by adding verbs, with a more convenient API
+//! than [`crate::Path`] itself.
+
 use std::fmt;
 
 use crate::{
@@ -67,7 +70,7 @@ impl PathBuilder {
     /// Constructs an empty [`PathBuilder`] with the given [`PathFillType`]. By default, [`PathBuilder`] has no
     /// verbs, no [`Point`], and no weights.
     ///
-    /// - `fill_type`: [`PathFillType`] to set on the [`PathBuilder`].
+    /// - `fill_type` [`PathFillType`] to set on the [`PathBuilder`].
     ///
     /// # Returns
     /// empty [`PathBuilder`]
@@ -78,7 +81,7 @@ impl PathBuilder {
     /// Constructs a [`PathBuilder`] that is a copy of an existing [`Path`].
     /// Copies the [`PathFillType`] and replays all of the verbs from the [`Path`] into the [`PathBuilder`].
     ///
-    /// - `path`: [`Path`] to copy
+    /// - `path` [`Path`] to copy
     ///
     /// # Returns
     /// [`PathBuilder`]
@@ -143,7 +146,7 @@ impl PathBuilder {
     /// Returns a [`Path`] representing the current state of the [`PathBuilder`]. The builder is
     /// unchanged after returning the path.
     ///
-    /// - `mx`: if present, applied to the points after they are copied into the resulting path.
+    /// - `mx` if present, applied to the points after they are copied into the resulting path.
     ///
     /// # Returns
     /// [`Path`] representing the current state of the builder.
@@ -171,7 +174,7 @@ impl PathBuilder {
     /// Returns a [`Path`] representing the current state of the [`PathBuilder`]. The builder is
     /// reset to empty after returning the path.
     ///
-    /// - `mx`: if present, applied to the points after they are copied into the resulting path.
+    /// - `mx` if present, applied to the points after they are copied into the resulting path.
     ///
     /// # Returns
     /// [`Path`] representing the current state of the builder.
@@ -190,7 +193,7 @@ impl PathBuilder {
     /// Sets [`PathFillType`], the rule used to fill [`Path`]. While there is no
     /// check that `ft` is legal, values outside of [`PathFillType`] are not supported.
     ///
-    /// - `ft`: [`PathFillType`] to be used by [`Path`]s generated from this builder.
+    /// - `ft` [`PathFillType`] to be used by [`Path`]s generated from this builder.
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -212,7 +215,7 @@ impl PathBuilder {
     /// raster surface [`Path`] draws are affected by volatile for some shadows.
     /// GPU surface [`Path`] draws are affected by volatile for some shadows and concave geometries.
     ///
-    /// - `is_volatile`: true if caller will alter [`Path`] after drawing
+    /// - `is_volatile` true if caller will alter [`Path`] after drawing
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -252,7 +255,7 @@ impl PathBuilder {
     /// `line_to()` first appends [`PathVerb::Move`] to verb array and (0, 0) to [`Point`] array, if needed.
     /// `line_to()` then appends [`PathVerb::Line`] to verb array and [`Point`] p to [`Point`] array.
     ///
-    /// - `pt`: end [`Point`] of added line
+    /// - `pt` end [`Point`] of added line
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -271,8 +274,8 @@ impl PathBuilder {
     /// then appends [`PathVerb::Quad`] to verb array; and [`Point`] p1, p2
     /// to [`Point`] array.
     ///
-    /// - `p1`: control [`Point`] of added quad
-    /// - `p2`: end [`Point`] of added quad
+    /// - `p1` control [`Point`] of added quad
+    /// - `p2` end [`Point`] of added quad
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -301,9 +304,9 @@ impl PathBuilder {
     /// If w is not finite, appends [`PathVerb::Line`] twice to verb array, and
     /// pt1, pt2 to [`Point`] array.
     ///
-    /// - `pt1`: control [`Point`] of conic
-    /// - `pt2`: end [`Point`] of conic
-    /// - `w`: weight of added conic
+    /// - `pt1` control [`Point`] of conic
+    /// - `pt2` end [`Point`] of conic
+    /// - `w` weight of added conic
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -323,9 +326,9 @@ impl PathBuilder {
     /// then appends [`PathVerb::Cubic`] to verb array; and [`Point`] p1, p2, p3
     /// to [`Point`] array.
     ///
-    /// - `p1`: first control [`Point`] of cubic
-    /// - `p2`: second control [`Point`] of cubic
-    /// - `p3`: end [`Point`] of cubic
+    /// - `p1` first control [`Point`] of cubic
+    /// - `p2` second control [`Point`] of cubic
+    /// - `p3` end [`Point`] of cubic
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -364,7 +367,7 @@ impl PathBuilder {
 
     /// Append a series of `line_to(...)`
     ///
-    /// - `points`: array of [`Point`]
+    /// - `points` array of [`Point`]
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -384,7 +387,7 @@ impl PathBuilder {
     /// Otherwise, start contour at last point offset by (dx, dy).
     /// Function name stands for "relative move to".
     ///
-    /// - `pt`: vector offset from last point to contour start
+    /// - `pt` vector offset from last point to contour start
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -403,7 +406,7 @@ impl PathBuilder {
     /// Line end is last point plus vector given by pt.
     /// Function name stands for "relative line to".
     ///
-    /// - `pt`: vector offset from last point to line end
+    /// - `pt` vector offset from last point to line end
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -425,8 +428,8 @@ impl PathBuilder {
     /// Quad end is last point plus vector pt2.
     /// Function name stands for "relative quad to".
     ///
-    /// - `pt1`: offset vector from last point to quad control
-    /// - `pt2`: offset vector from last point to quad end
+    /// - `pt1` offset vector from last point to quad control
+    /// - `pt2` offset vector from last point to quad end
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -456,9 +459,9 @@ impl PathBuilder {
     ///
     /// Function name stands for "relative conic to".
     ///
-    /// - `pt1`: offset vector from last point to conic control
-    /// - `pt2`: offset vector from last point to conic end
-    /// - `w`: weight of added conic
+    /// - `pt1` offset vector from last point to conic control
+    /// - `pt2` offset vector from last point to conic end
+    /// - `w` weight of added conic
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -487,9 +490,9 @@ impl PathBuilder {
     /// Cubic end is last point plus vector (dx2, dy2).
     /// Function name stands for "relative cubic to".
     ///
-    /// - `pt1`: offset vector from last point to first cubic control
-    /// - `pt2`: offset vector from last point to second cubic control
-    /// - `pt3`: offset vector from last point to cubic end
+    /// - `pt1` offset vector from last point to first cubic control
+    /// - `pt2` offset vector from last point to second cubic control
+    /// - `pt3` offset vector from last point to cubic end
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -526,11 +529,11 @@ impl PathBuilder {
     /// opposite the integer value of sweep; SVG "sweep-flag" uses 1 for clockwise, while
     /// [`PathDirection::CW`] cast to int is zero.
     ///
-    /// - `r`: radii on axes before x-axis rotation
-    /// - `x_axis_rotate`: x-axis rotation in degrees; positive values are clockwise
-    /// - `large_arc`: chooses smaller or larger arc
-    /// - `sweep`: chooses clockwise or counterclockwise arc
-    /// - `dxdy`: offset end of arc from last [`Path`] point
+    /// - `r` radii on axes before x-axis rotation
+    /// - `x_axis_rotate` x-axis rotation in degrees; positive values are clockwise
+    /// - `large_arc` chooses smaller or larger arc
+    /// - `sweep` chooses clockwise or counterclockwise arc
+    /// - `dxdy` offset end of arc from last [`Path`] point
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -565,10 +568,10 @@ impl PathBuilder {
     /// is false and the builder is not empty. Otherwise, added contour begins with first point
     /// of arc. Angles greater than -360 and less than 360 are treated modulo 360.
     ///
-    /// - `oval`: bounds of ellipse containing arc
-    /// - `start_angle_deg`: starting angle of arc in degrees
-    /// - `sweep_angle_deg`: sweep, in degrees. Positive is clockwise; treated modulo 360
-    /// - `force_move_to`: true to start a new contour with arc
+    /// - `oval` bounds of ellipse containing arc
+    /// - `start_angle_deg` starting angle of arc in degrees
+    /// - `sweep_angle_deg` sweep, in degrees. Positive is clockwise; treated modulo 360
+    /// - `force_move_to` true to start a new contour with arc
     ///
     /// # Returns
     /// reference to the builder
@@ -604,9 +607,9 @@ impl PathBuilder {
     /// `arc_to()` appends at most one line and one conic.
     /// `arc_to()` implements the functionality of PostScript arct and HTML Canvas `arcTo`.
     ///
-    /// - `p1`: [`Point`] common to pair of tangents
-    /// - `p2`: end of second tangent
-    /// - `radius`: distance from arc to circle center
+    /// - `p1` [`Point`] common to pair of tangents
+    /// - `p2` end of second tangent
+    /// - `radius` distance from arc to circle center
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -639,11 +642,11 @@ impl PathBuilder {
     /// opposite the integer value of sweep; SVG sweep-flag uses 1 for clockwise, while
     /// [`PathDirection::CW`] cast to int is zero.
     ///
-    /// - `r`: radii on axes before x-axis rotation
-    /// - `x_axis_rotate`: x-axis rotation in degrees; positive values are clockwise
-    /// - `large_arc`: chooses smaller or larger arc
-    /// - `sweep`: chooses clockwise or counterclockwise arc
-    /// - `xy`: end of arc
+    /// - `r` radii on axes before x-axis rotation
+    /// - `x_axis_rotate` x-axis rotation in degrees; positive values are clockwise
+    /// - `large_arc` chooses smaller or larger arc
+    /// - `sweep` chooses clockwise or counterclockwise arc
+    /// - `xy` end of arc
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -676,9 +679,9 @@ impl PathBuilder {
     /// zero, append oval instead of arc. Otherwise, `sweep_angle` values are treated
     /// modulo 360, and arc may or may not draw depending on numeric rounding.
     ///
-    /// - `oval`: bounds of ellipse containing arc
-    /// - `start_angle_deg`: starting angle of arc in degrees
-    /// - `sweep_angle_deg`: sweep, in degrees. Positive is clockwise; treated modulo 360
+    /// - `oval` bounds of ellipse containing arc
+    /// - `start_angle_deg` starting angle of arc in degrees
+    /// - `sweep_angle_deg` sweep, in degrees. Positive is clockwise; treated modulo 360
     ///
     /// # Returns
     /// reference to this builder
@@ -717,9 +720,9 @@ impl PathBuilder {
     ///     // if we don't say move_to() here, we will use the rect's start point
     ///     path.line_to(...)
     ///
-    /// - `rect`: [`Rect`] to add as a closed contour
-    /// - `dir`: [`PathDirection`] to orient the new contour
-    /// - `start_index`: initial corner of [`Rect`] to add
+    /// - `rect` [`Rect`] to add as a closed contour
+    /// - `dir` [`PathDirection`] to orient the new contour
+    /// - `start_index` initial corner of [`Rect`] to add
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -743,9 +746,9 @@ impl PathBuilder {
     /// and half oval height. Oval begins at (oval.right, oval.center_y()) and continues
     /// clockwise if dir is [`PathDirection::CW`], counterclockwise if dir is [`PathDirection::CCW`].
     ///
-    /// - `rect`: bounds of ellipse added
-    /// - `dir`: [`PathDirection`] to wind ellipse
-    /// - `start_index`: index of initial point of ellipse
+    /// - `rect` bounds of ellipse added
+    /// - `dir` [`PathDirection`] to wind ellipse
+    /// - `start_index` index of initial point of ellipse
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -770,9 +773,9 @@ impl PathBuilder {
     ///
     /// After appending, [`PathBuilder`] may be empty, or may contain: [`Rect`], oval, or [`RRect`].
     ///
-    /// - `rect`: [`RRect`] to add
-    /// - `dir`: [`PathDirection`] to wind [`RRect`]
-    /// - `start_index`: index of initial point of [`RRect`]
+    /// - `rect` [`RRect`] to add
+    /// - `dir` [`PathDirection`] to wind [`RRect`]
+    /// - `start_index` index of initial point of [`RRect`]
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -804,9 +807,9 @@ impl PathBuilder {
     ///
     /// Has no effect if radius is zero or negative.
     ///
-    /// - `center`: center of circle
-    /// - `radius`: distance from center to edge
-    /// - `dir`: [`PathDirection`] to wind circle
+    /// - `center` center of circle
+    /// - `radius` distance from center to edge
+    /// - `dir` [`PathDirection`] to wind circle
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -830,8 +833,8 @@ impl PathBuilder {
     /// in pts array. If close is true, appends [`PathVerb::Close`] to [`Path`], connecting
     /// `pts[count - 1]` and `pts[0]`.
     ///
-    /// - `pts`: array of line sharing end and start [`Point`]
-    /// - `close`: true to add line connecting contour end and start
+    /// - `pts` array of line sharing end and start [`Point`]
+    /// - `close` true to add line connecting contour end and start
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -853,8 +856,8 @@ impl PathBuilder {
     /// added unaltered. If mode is [`path::AddPathMode::Extend`], add line before appending
     /// verbs, [`Point`], and conic weights.
     ///
-    /// - `path`: [`Path`] verbs, [`Point`], and conic weights to add
-    /// - `mode`: [`path::AddPathMode::Append`] or [`path::AddPathMode::Extend`]
+    /// - `path` [`Path`] verbs, [`Point`], and conic weights to add
+    /// - `mode` [`path::AddPathMode::Append`] or [`path::AddPathMode::Extend`]
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -872,9 +875,9 @@ impl PathBuilder {
     /// added unaltered except for the applied offset. If mode is [`path::AddPathMode::Extend`], add line
     /// before appending verbs, [`Point`], and conic weights.
     ///
-    /// - `path`: [`Path`] verbs, [`Point`], and conic weights to add
-    /// - `offset`: offset applied to src before appending
-    /// - `mode`: [`path::AddPathMode::Append`] or [`path::AddPathMode::Extend`]
+    /// - `path` [`Path`] verbs, [`Point`], and conic weights to add
+    /// - `offset` offset applied to src before appending
+    /// - `mode` [`path::AddPathMode::Append`] or [`path::AddPathMode::Extend`]
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -903,9 +906,9 @@ impl PathBuilder {
     /// added unaltered. If mode is [`path::AddPathMode::Extend`], add line before appending
     /// verbs, [`Point`], and conic weights.
     ///
-    /// - `src`: [`Path`] verbs, [`Point`], and conic weights to add
-    /// - `matrix`: transform applied to src
-    /// - `mode`: [`path::AddPathMode::Append`] or [`path::AddPathMode::Extend`]
+    /// - `src` [`Path`] verbs, [`Point`], and conic weights to add
+    /// - `matrix` transform applied to src
+    /// - `mode` [`path::AddPathMode::Append`] or [`path::AddPathMode::Extend`]
     pub fn add_path_with_transform(
         &mut self,
         src: &Path,
@@ -925,9 +928,9 @@ impl PathBuilder {
     /// May improve performance and use less memory by
     /// reducing the number and size of allocations when creating [`PathBuilder`].
     ///
-    /// - `extra_pt_count`: number of additional [`Point`] to allocate
-    /// - `extra_verb_count`: number of additional verbs
-    /// - `extra_conic_count`: number of additional conic weights
+    /// - `extra_pt_count` number of additional [`Point`] to allocate
+    /// - `extra_verb_count` number of additional verbs
+    /// - `extra_conic_count` number of additional conic weights
     pub fn inc_reserve(
         &mut self,
         extra_pt_count: usize,
@@ -945,7 +948,7 @@ impl PathBuilder {
 
     /// Offsets [`Point`] array by (dx, dy).
     ///
-    /// - `d`: offset added to [`Point`] array coordinates
+    /// - `d` offset added to [`Point`] array coordinates
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -960,7 +963,7 @@ impl PathBuilder {
     /// Transforms verb array, [`Point`] array, and weight by matrix.
     /// transform may change verbs and increase their number.
     ///
-    /// - `matrix`: [`Matrix`] to apply to [`Path`]
+    /// - `matrix` [`Matrix`] to apply to [`Path`]
     ///
     /// # Returns
     /// reference to [`PathBuilder`]
@@ -1009,8 +1012,8 @@ impl PathBuilder {
     /// Change the point at the specified index (see `count_points()`).
     /// If index is out of range, the call does nothing.
     ///
-    /// - `index`: which point to replace
-    /// - `p`: the new point value
+    /// - `index` which point to replace
+    /// - `p` the new point value
     pub fn set_point(&mut self, index: usize, p: impl Into<Point>) {
         let p = p.into();
         unsafe { sb::C_SkPathBuilder_setPoint(self.native_mut(), index, *p.native()) }
@@ -1019,7 +1022,7 @@ impl PathBuilder {
     /// Change the last point in the builder.
     /// If the builder is empty, the call does nothing.
     ///
-    /// - `p`: the new point value
+    /// - `p` the new point value
     pub fn set_last_point(&mut self, p: impl Into<Point>) {
         let len = self.points().len();
         if len != 0 {
@@ -1030,7 +1033,7 @@ impl PathBuilder {
     /// Sets the last point on the path. If [`Point`] array is empty, append [`PathVerb::Move`] to
     /// verb array and append p to [`Point`] array.
     ///
-    /// - `p`: last point
+    /// - `p` last point
     #[deprecated(since = "0.93.0", note = "Use set_last_point() or set_point()")]
     pub fn set_last_pt(&mut self, p: impl Into<Point>) {
         let p = p.into();

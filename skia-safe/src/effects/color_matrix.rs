@@ -1,3 +1,5 @@
+//! A 5x4 matrix for transforming colors, used to create color filters.
+
 use crate::{YUVColorSpace, prelude::*};
 use skia_bindings::{self as sb, SkColorMatrix};
 use std::fmt;

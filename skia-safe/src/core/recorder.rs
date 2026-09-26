@@ -1,3 +1,6 @@
+//! The [`Recorder`] trait and [`RecorderRef`] for recording drawing commands, implemented by e.g.
+//! [`crate::cpu::Recorder`].
+
 use std::{cell::UnsafeCell, fmt};
 
 use crate::prelude::*;

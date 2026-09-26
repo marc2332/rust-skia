@@ -11,9 +11,9 @@ use crate::{
 /// containing integer width and height, [`ColorType`] and [`AlphaType`] describing the pixel
 /// format, and [`ColorSpace`] describing the range of colors. [`Bitmap`] points to [`PixelRef`],
 /// which describes the physical array of pixels. [`ImageInfo`] bounds may be located anywhere fully
-/// inside [PixelRef] bounds.
+/// inside [`PixelRef`] bounds.
 ///
-/// [`Bitmap`] can be drawn using [crate::Canvas]. [`Bitmap`] can be a drawing destination for
+/// [`Bitmap`] can be drawn using [`crate::Canvas`]. [`Bitmap`] can be a drawing destination for
 /// [`crate::Canvas`] draw member functions. [`Bitmap`] flexibility as a pixel container limits some
 /// optimizations available to the target platform.
 ///
@@ -38,6 +38,9 @@ impl NativeDrop for SkBitmap {
 impl NativeClone for SkBitmap {
     /// Copies settings from `self` to returned [`Bitmap`]. Shares pixels if `self` has pixels
     /// allocated, so both bitmaps reference the same pixels.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_copy_const_SkBitmap>
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_copy_operator>
     fn clone(&self) -> Self {
         unsafe { SkBitmap::new1(self) }
     }
@@ -64,11 +67,15 @@ impl Bitmap {
     ///
     /// Use [`Self::set_info()`] to associate [`ColorType`], [`AlphaType`], width, and height after
     /// [`Bitmap`] has been created.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_empty_constructor>
     pub fn new() -> Self {
         Self::construct(|bitmap| unsafe { sb::C_SkBitmap_Construct(bitmap) })
     }
 
     /// Swaps the fields of the two bitmaps.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_swap>
     pub fn swap(&mut self, other: &mut Self) {
         unsafe { self.native_mut().swap(other.native_mut()) }
     }
@@ -79,7 +86,7 @@ impl Bitmap {
         Pixmap::from_native_ref(&self.native().fPixmap)
     }
 
-    /// Returns width, height, [`AlphaType`], [ColorType], and [`ColorSpace`].
+    /// Returns width, height, [`AlphaType`], [`ColorType`], and [`ColorSpace`].
     pub fn info(&self) -> &ImageInfo {
         self.pixmap().info()
     }
@@ -186,6 +193,8 @@ impl Bitmap {
     /// it is treated as [`AlphaType::Premul`].
     ///
     /// This changes [`AlphaType`] in [`PixelRef`]; all bitmaps sharing [`PixelRef`] are affected.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_setAlphaType>
     pub fn set_alpha_type(&mut self, alpha_type: AlphaType) -> bool {
         unsafe { self.native_mut().setAlphaType(alpha_type) }
     }
@@ -220,6 +229,8 @@ impl Bitmap {
     /// Returns `true` if pixels can not change.
     ///
     /// Most immutable [`Bitmap`] checks trigger an assert only on debug builds.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_isImmutable>
     pub fn is_immutable(&self) -> bool {
         unsafe { self.native().isImmutable() }
     }
@@ -230,6 +241,8 @@ impl Bitmap {
     /// Once [`PixelRef`] is marked immutable, the setting cannot be cleared.
     ///
     /// Writing to immutable [`Bitmap`] pixels triggers an assert on debug builds.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_setImmutable>
     pub fn set_immutable(&mut self) {
         unsafe { self.native_mut().setImmutable() }
     }
@@ -238,7 +251,7 @@ impl Bitmap {
     /// is implicitly or explicitly `1.0`. If `true`, and all pixels are not opaque, Skia may draw
     /// incorrectly.
     ///
-    /// Does not check if [ColorType] allows alpha, or if any pixel value has transparency.
+    /// Does not check if [`ColorType`] allows alpha, or if any pixel value has transparency.
     pub fn is_opaque(&self) -> bool {
         self.pixmap().is_opaque()
     }
@@ -251,6 +264,8 @@ impl Bitmap {
     ///
     /// If [`PixelRef`] is allocated, its reference count is decreased by one, releasing its memory
     /// if [`Bitmap`] is the sole owner.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_reset>
     pub fn reset(&mut self) {
         unsafe { self.native_mut().reset() }
     }
@@ -266,6 +281,9 @@ impl Bitmap {
     }
 
     /// Returns `IRect { 0, 0, width(), height() }`.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_getBounds>
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_getBounds_2>
     pub fn bounds(&self) -> IRect {
         self.info().bounds()
     }
@@ -281,7 +299,7 @@ impl Bitmap {
         IRect::from_xywh(origin.x, origin.y, self.width(), self.height())
     }
 
-    /// Sets width, height, [`AlphaType`], [ColorType], [`ColorSpace`], and optional `row_bytes`.
+    /// Sets width, height, [`AlphaType`], [`ColorType`], [`ColorSpace`], and optional `row_bytes`.
     /// Frees pixels, and returns `true` if successful.
     ///
     /// `row_bytes` must equal or exceed `image_info.min_row_bytes()`. If `image_info.color_space()`
@@ -294,6 +312,8 @@ impl Bitmap {
     /// - `image_info.height()` is negative
     /// - `row_bytes` is positive and less than `image_info.width()` times
     ///   `image_info.bytes_per_pixel()`
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_setInfo>
     #[must_use]
     pub fn set_info(
         &mut self,
@@ -334,6 +354,8 @@ impl Bitmap {
     /// On most platforms, allocating pixel memory may succeed even though there is not sufficient
     /// memory to hold pixels; allocation does not take place until the pixels are written to. The
     /// actual behavior depends on the platform implementation of `calloc()`.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_allocPixelsFlags>
     pub fn alloc_pixels_flags(&mut self, image_info: &ImageInfo) {
         if !self.try_alloc_pixels_flags(image_info) {
             panic!("Bitmap::alloc_pixels_flags failed");
@@ -369,12 +391,15 @@ impl Bitmap {
     /// `row_bytes` must equal or exceed `info.width()` times `info.bytes_per_pixel()`, or equal
     /// `None`. Pass in `None` for `row_bytes` to compute the minimum valid value.
     ///
-    /// Aborts execution if SkImageInfo could not be set, or memory could
+    /// Aborts execution if [`ImageInfo`] could not be set, or memory could
     /// be allocated.
     ///
     /// On most platforms, allocating pixel memory may succeed even though there is not sufficient
     /// memory to hold pixels; allocation does not take place until the pixels are written to. The
     /// actual behavior depends on the platform implementation of `malloc()`.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_allocPixels>
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_allocPixels_2>
     pub fn alloc_pixels_info(
         &mut self,
         image_info: &ImageInfo,
@@ -420,6 +445,8 @@ impl Bitmap {
     ///
     /// Use to create [`Bitmap`] that matches [`crate::PMColor`], the native pixel arrangement on
     /// the platform. [`Bitmap`] drawn to output device skips converting its pixel format.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_allocN32Pixels>
     pub fn alloc_n32_pixels(
         &mut self,
         (width, height): (i32, i32),
@@ -441,6 +468,8 @@ impl Bitmap {
     /// Otherwise, if pixels equals `ptr::null_mut()`: sets [`ImageInfo`], returns `true`.
     ///
     /// Caller must ensure that pixels are valid for the lifetime of [`Bitmap`] and [`PixelRef`].
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_installPixels_3>
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn install_pixels(
         &mut self,
@@ -471,6 +500,8 @@ impl Bitmap {
     /// allocation size is determined by [`ImageInfo`] width, height, and [`ColorType`].
     ///
     /// Aborts if `info().color_type()` is [`ColorType::Unknown`], or allocation fails.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_allocPixels_3>
     pub fn alloc_pixels(&mut self) {
         if !self.try_alloc_pixels() {
             panic!("Bitmap::alloc_pixels failed");
@@ -498,6 +529,8 @@ impl Bitmap {
     /// [`PixelRef`] dimensions.
     ///
     /// Returns `(0, 0)` if [`PixelRef`] is `None`.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_pixelRefOrigin>
     pub fn pixel_ref_origin(&self) -> IPoint {
         IPoint::from_native_c(unsafe { sb::C_SkBitmap_pixelRefOrigin(self.native()) })
     }
@@ -510,6 +543,8 @@ impl Bitmap {
     ///
     /// The caller is responsible for ensuring that the pixels match the [`ColorType`] and
     /// [`AlphaType`] in [`ImageInfo`].
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_setPixelRef>
     pub fn set_pixel_ref(
         &mut self,
         pixel_ref: impl Into<Option<PixelRef>>,
@@ -536,12 +571,16 @@ impl Bitmap {
     /// Returns zero if [`PixelRef`] is `None`.
     ///
     /// Determines if pixels have changed since last examined.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_getGenerationID>
     pub fn generation_id(&self) -> u32 {
         unsafe { self.native().getGenerationID() }
     }
 
     /// Marks that pixels in [`PixelRef`] have changed. Subsequent calls to `generation_id()` return
     /// a different value.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_notifyPixelsChanged>
     pub fn notify_pixels_changed(&self) {
         unsafe { self.native().notifyPixelsChanged() }
     }
@@ -553,14 +592,18 @@ impl Bitmap {
     ///
     /// Input color is ultimately converted to an [`Color4f`], so [`Self::erase_color_4f`] will have
     /// higher color resolution.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_eraseColor>
     pub fn erase_color(&self, c: impl Into<Color>) {
         unsafe { self.native().eraseColor1(c.into().into_native()) }
     }
 
     /// Replaces pixel values with `c`, interpreted as being in the sRGB [`ColorSpace`]. All pixels
     /// contained by [`Self::bounds()`] are affected. If the [`Self::color_type()`] is
-    /// [`ColorType::Gray8`] or [ColorType::RGB565], then alpha is ignored; RGB is treated as
+    /// [`ColorType::Gray8`] or [`ColorType::RGB565`], then alpha is ignored; RGB is treated as
     /// opaque. If [`Self::color_type()`] is [`ColorType::Alpha8`], then RGB is ignored.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_eraseColor>
     pub fn erase_color_4f(&self, c: impl AsRef<Color4f>) {
         unsafe { self.native().eraseColor(c.as_ref().into_native()) }
     }
@@ -582,6 +625,8 @@ impl Bitmap {
     ///
     /// Input color is ultimately converted to an [`Color4f`], so [`Self::erase_4f`] will have
     /// higher color resolution.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_erase>
     pub fn erase(&self, c: impl Into<Color>, area: impl AsRef<IRect>) {
         unsafe {
             self.native()
@@ -594,6 +639,8 @@ impl Bitmap {
     ///
     /// If the `color_type()` is [`ColorType::Gray8`] [`ColorType::RGB565`], then alpha is ignored;
     /// RGB is treated as opaque. If `color_type()` is [`ColorType::Alpha8`], then RGB is ignored.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_erase>
     pub fn erase_4f(&self, c: impl AsRef<Color4f>, area: impl AsRef<IRect>) {
         unsafe {
             self.native()
@@ -606,7 +653,7 @@ impl Bitmap {
     ///
     /// Input is not validated: out of bounds values of `x` or `y` trigger an `assert()`.
     ///
-    /// Fails if [`ColorType`] is [`ColorType::Unknown`] or pixel address is `nullptr`.
+    /// Fails if [`ColorType`] is [`ColorType::Unknown`] or pixel address is `None`.
     ///
     /// [`ColorSpace`] in [`ImageInfo`] is ignored. Some color precision may be lost in the
     /// conversion to unpremultiplied color; original pixel data may have additional precision.
@@ -615,11 +662,11 @@ impl Bitmap {
     }
 
     /// Returns pixel at `(x, y)` as unpremultiplied color.
-    /// Returns black with alpha if [ColorType] is [ColorType::Alpha8]
+    /// Returns black with alpha if [`ColorType`] is [`ColorType::Alpha8`]
     ///
     /// Input is not validated: out of bounds values of x or y trigger an `assert()`.
     ///
-    /// Fails if [ColorType] is [ColorType::Unknown] or pixel address is `None`.
+    /// Fails if [`ColorType`] is [`ColorType::Unknown`] or pixel address is `None`.
     ///
     /// [`ColorSpace`] in [`ImageInfo`] is ignored. Some color precision may be lost in the
     /// conversion to unpremultiplied color.
@@ -637,11 +684,13 @@ impl Bitmap {
     /// Returns pixel address at `(x, y)`.
     ///
     /// Input is not validated: out of bounds values of `x` or `y`, or [`ColorType::Unknown`],
-    /// trigger an `assert()`. Returns `nullptr` if [`ColorType`] is [`ColorType::Unknown`], or
-    /// [`PixelRef`] is `nullptr`.
+    /// trigger an `assert()`. Returns `None` if [`ColorType`] is [`ColorType::Unknown`], or
+    /// [`PixelRef`] is `None`.
     ///
     /// Performs a lookup of pixel size; for better performance, call one of: `get_addr8()`,
     /// `get_addr16()`, or `get_addr32()`.
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_getAddr>
     pub fn get_addr(&self, p: impl Into<IPoint>) -> *const ffi::c_void {
         let p = p.into();
         unsafe { self.native().getAddr(p.x, p.y) }
@@ -659,11 +708,11 @@ impl Bitmap {
     /// Any contents of dst are discarded.
     ///
     /// Return `false` if:
-    /// - dst is `nullptr`
-    /// - [`PixelRef`] is `nullptr`
+    /// - dst is `None`
+    /// - [`PixelRef`] is `None`
     /// - subset does not intersect [`Self::bounds()`]
     ///
-    /// example: <https://fiddle.skia.org/c/@Bitmap_extractSubset>
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_extractSubset>
     pub fn extract_subset(&self, dst: &mut Self, subset: impl AsRef<IRect>) -> bool {
         unsafe {
             self.native()
@@ -674,24 +723,26 @@ impl Bitmap {
     /// Copies a [`crate::Rect`] of pixels from [`Bitmap`] to `dst_pixels`. Copy starts at `(src_x,
     /// src_y)`, and does not exceed [`Bitmap`] `(width(), height())`.
     ///
-    /// `dst_info` specifies width, height, [ColorType], [`AlphaType`], and [`ColorSpace`] of
+    /// `dst_info` specifies width, height, [`ColorType`], [`AlphaType`], and [`ColorSpace`] of
     /// destination.  
     /// `dst_row_bytes` specifics the gap from one destination row to the next. Returns `true` if
     /// pixels are copied. Returns `false` if:
     /// - `dst_info` has no address
     /// - `dst_row_bytes` is less than `dst_info.min_row_bytes()`
-    /// - [`PixelRef`] is `nullptr`
+    /// - [`PixelRef`] is `None`
     ///
     /// Pixels are copied only if pixel conversion is possible. If [`Self::color_type()`] is
     /// [`ColorType::Gray8`], or [`ColorType::Alpha8`]; `dst_info.color_type()` must match. If
     /// [`Self::color_type()`] is [`ColorType::Gray8`], `dst_info.color_space()` must match. If
     /// [`Self::alpha_type()`] is [`AlphaType::Opaque`], `dst_info.alpha_type()` must match. If
-    /// [`Self::color_space()`] is `nullptr`, `dst_info.color_space()` must match. Returns `false`
+    /// [`Self::color_space()`] is `None`, `dst_info.color_space()` must match. Returns `false`
     /// if pixel conversion is not possible.
     ///
     /// `src_x` and `src_y` may be negative to copy only top or left of source. Returns `false` if
     /// [`Self::width()`] or [`Self::height()`] is zero or negative. Returns `false` if `abs(src_x)`
     /// `>=` [`Self::width()`], or if `abs(src_y) >=` [`Self::height()`].
+    ///
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_readPixels_2>
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn read_pixels(
         &self,
@@ -716,7 +767,7 @@ impl Bitmap {
     /// If `paint` is not `None` and contains [`crate::MaskFilter`], [`crate::MaskFilter`] generates
     /// mask alpha from [`Bitmap`]. Uses `HeapAllocator` to reserve memory for `dst` [`PixelRef`].
     /// Returns offset to top-left position for `dst` for alignment with [`Bitmap`]; `(0, 0)` unless
-    /// [crate::MaskFilter] generates mask.
+    /// [`crate::MaskFilter`] generates mask.
     pub fn extract_alpha(&self, dst: &mut Self, paint: Option<&Paint>) -> Option<IPoint> {
         let mut offset = IPoint::default();
         unsafe {
@@ -734,7 +785,7 @@ impl Bitmap {
     /// available, and returns `Some(Pixmap)`. If pixel address is not available, return `None`
     /// and leave pixmap unchanged.
     ///
-    /// example: <https://fiddle.skia.org/c/@Bitmap_peekPixels>
+    /// Example (C++): <https://fiddle.skia.org/c/@Bitmap_peekPixels>
     pub fn peek_pixels(&self) -> Option<Pixmap> {
         let mut pixmap = Pixmap::default();
         unsafe { self.native().peekPixels(pixmap.native_mut()) }.then_some(pixmap)
