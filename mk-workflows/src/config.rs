@@ -69,31 +69,6 @@ pub fn binaries_jobs(workflow: &Workflow) -> Vec<Job> {
     let freya_features = freya_binaries_features(workflow);
     let mut features = freya_features.clone();
 
-    match workflow.host_os {
-        HostOS::Windows => {
-            features.extend_from_slice(&[
-                "graphite,vulkan,svg,textlayout,webp".into(),
-                "graphite,gl,vulkan,svg,textlayout,webp".into(),
-            ]);
-        }
-        HostOS::Linux => {
-            features.extend_from_slice(&[
-                "graphite,vulkan,svg,textlayout,webp".into(),
-                "graphite,gl,vulkan,svg,textlayout,wayland,webp,x11".into(),
-            ]);
-        }
-        HostOS::Android => {
-            features.push("graphite,vulkan,svg,textlayout,webp".into());
-        }
-        HostOS::MacOS => {
-            features.extend_from_slice(&[
-                "graphite,metal,svg,textlayout,webp".into(),
-                "ganesh,graphite,metal,svg,textlayout,webp".into(),
-            ]);
-        }
-        HostOS::WindowsArm | HostOS::Wasm => {}
-    }
-
     features.sort();
     features.dedup();
 

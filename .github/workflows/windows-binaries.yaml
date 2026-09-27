@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features: ["svg,textlayout,webp", "gl,svg,textlayout,vulkan,webp", "graphite,svg,textlayout,vulkan,webp", "gl,graphite,svg,textlayout,vulkan,webp"]
+        features: ["svg,textlayout,webp", "gl,svg,textlayout,vulkan,webp"]
         target: ["x86_64-pc-windows-msvc"]
         include:
           - target: x86_64-pc-windows-msvc

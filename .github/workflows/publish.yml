@@ -30,6 +30,11 @@ jobs:
       - name: Configure Rust Toolchain
         run: rustup default stable
 
+      - name: Publish freya-skia-svg-macros
+        run: make publish-svg-macros
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
       # `publish-bindings-docs` generates `bindings_docs.rs` via `make
       # bindings-docs`, copies it into the skia-bindings crate, and then runs
       # `cargo publish --no-verify --allow-dirty`. Without that file in the

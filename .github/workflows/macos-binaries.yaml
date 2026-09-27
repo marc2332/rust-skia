@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features: ["svg,textlayout,webp", "ganesh,metal,svg,textlayout,webp", "graphite,metal,svg,textlayout,webp", "ganesh,graphite,metal,svg,textlayout,webp"]
+        features: ["svg,textlayout,webp", "ganesh,metal,svg,textlayout,webp"]
         target: ["aarch64-apple-darwin", "x86_64-apple-darwin"]
         include:
           - target: aarch64-apple-darwin
@@ -39,10 +39,6 @@ jobs:
           - features: 'svg,textlayout,webp'
             macosxDeploymentTarget: '10.13'
           - features: 'ganesh,metal,svg,textlayout,webp'
-            macosxDeploymentTarget: '10.14'
-          - features: 'graphite,metal,svg,textlayout,webp'
-            macosxDeploymentTarget: '10.14'
-          - features: 'ganesh,graphite,metal,svg,textlayout,webp'
             macosxDeploymentTarget: '10.14'
     runs-on: macos-15
     env:
