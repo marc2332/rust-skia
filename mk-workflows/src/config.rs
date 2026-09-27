@@ -17,6 +17,16 @@ pub fn workflows() -> Vec<Workflow> {
             targets: windows_targets(),
             host_bin_ext: ".exe",
         });
+        if kind == WorkflowKind::Release {
+            workflows.push(Workflow {
+                kind,
+                host_os: HostOS::WindowsArm,
+                host_target: "aarch64-pc-windows-msvc",
+                job_template: WINDOWS_ARM_JOB,
+                targets: windows_arm_targets(),
+                host_bin_ext: ".exe",
+            });
+        }
         workflows.push(Workflow {
             kind,
             host_os: HostOS::Linux,
@@ -119,7 +129,10 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
             ]
         }
         HostOS::WindowsArm => {
-            vec![]
+            vec![
+                "d3d,svg,textlayout,webp".into(),
+                "svg,textlayout,webp".into(),
+            ]
         }
         HostOS::Linux => {
             vec![
