@@ -125,6 +125,7 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
         HostOS::MacOS => {
             vec![
                 "ganesh,metal,svg,textlayout,webp".into(),
+                "ganesh,gl,metal,svg,textlayout,webp".into(),
                 "svg,textlayout,webp".into(),
             ]
         }
