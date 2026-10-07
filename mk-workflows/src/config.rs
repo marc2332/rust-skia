@@ -230,6 +230,9 @@ fn macos_targets() -> Vec<TargetConf> {
     vec![
         TargetConf::new("aarch64-apple-darwin", "metal"),
         TargetConf::new("x86_64-apple-darwin", "metal"),
+        TargetConf::new("aarch64-apple-ios", "metal"),
+        TargetConf::new("aarch64-apple-ios-sim", "metal"),
+        TargetConf::new("x86_64-apple-ios", "metal"),
     ]
 }
 

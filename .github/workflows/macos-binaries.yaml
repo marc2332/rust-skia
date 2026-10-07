@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         features: ["svg,textlayout,webp", "ganesh,metal,svg,textlayout,webp", "ganesh,gl,metal,svg,textlayout,webp"]
-        target: ["aarch64-apple-darwin", "x86_64-apple-darwin"]
+        target: ["aarch64-apple-darwin", "x86_64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-sim", "x86_64-apple-ios"]
         include:
           - target: aarch64-apple-darwin
             androidEnv: false
@@ -30,6 +30,27 @@ jobs:
             exampleArgs: ''
             generateArtifacts: false
           - target: x86_64-apple-darwin
+            androidEnv: false
+            emscriptenEnv: false
+            runClippy: false
+            runTests: false
+            exampleArgs: ''
+            generateArtifacts: false
+          - target: aarch64-apple-ios
+            androidEnv: false
+            emscriptenEnv: false
+            runClippy: false
+            runTests: false
+            exampleArgs: ''
+            generateArtifacts: false
+          - target: aarch64-apple-ios-sim
+            androidEnv: false
+            emscriptenEnv: false
+            runClippy: false
+            runTests: false
+            exampleArgs: ''
+            generateArtifacts: false
+          - target: x86_64-apple-ios
             androidEnv: false
             emscriptenEnv: false
             runClippy: false

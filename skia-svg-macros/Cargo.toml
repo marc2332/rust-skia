@@ -2,7 +2,7 @@
 name = "freya-skia-svg-macros"
 
 description = "Skia SVG Macros for Dom bindings"
-version = "0.101.0"
+version = "0.102.0"
 edition.workspace = true
 rust-version.workspace = true
 
