@@ -18,7 +18,7 @@ concurrency:
 jobs:
   linux-local-build:
     runs-on: ubuntu-24.04
-    container: ghcr.io/pragmatrix/rust-skia-linux:latest
+    container: ghcr.io/marc2332/rust-skia-linux:latest
 
     steps:
     - uses: actions/checkout@v3
@@ -44,7 +44,7 @@ jobs:
 
   linux-wasm:
     runs-on: ubuntu-24.04
-    container: ghcr.io/pragmatrix/rust-skia-linux:latest
+    container: ghcr.io/marc2332/rust-skia-linux:latest
     env:
       EMCC_CFLAGS: "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
 
@@ -76,7 +76,7 @@ jobs:
   # https://github.com/rust-skia/rust-skia/issues/535
   # linux-arm64-build:
   #   runs-on: ubuntu-20.04
-  #   container: ghcr.io/pragmatrix/rust-skia-linux-arm64:latest
+  #   container: ghcr.io/marc2332/rust-skia-linux-arm64:latest
 
   #   steps:
   #   - uses: actions/checkout@v3
@@ -222,7 +222,7 @@ jobs:
 
   linux-beta:
     runs-on: ubuntu-24.04
-    container: ghcr.io/pragmatrix/rust-skia-linux:latest
+    container: ghcr.io/marc2332/rust-skia-linux:latest
 
     steps:
     - uses: actions/checkout@v3
@@ -248,7 +248,7 @@ jobs:
 
   linux-msrv:
     runs-on: ubuntu-24.04
-    container: ghcr.io/pragmatrix/rust-skia-linux:latest
+    container: ghcr.io/marc2332/rust-skia-linux:latest
 
     steps:
     - uses: actions/checkout@v3

@@ -1,4 +1,4 @@
-FROM ghcr.io/pragmatrix/rust-skia-windows:latest
+FROM ghcr.io/marc2332/rust-skia-windows:latest
 
 WORKDIR /rust-skia/
 COPY . /rust-skia/

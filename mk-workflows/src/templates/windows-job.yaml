@@ -1,6 +1,6 @@
 runs-on: windows-2022
 # Containers are not supported on Windows.
-# container: ghcr.io/pragmatrix/rust-skia-windows:latest
+# container: ghcr.io/marc2332/rust-skia-windows:latest
 env:
   SKIA_DEBUG: $[[skiaDebug]]
   RUSTFLAGS: '$[[rustFlags]]'
