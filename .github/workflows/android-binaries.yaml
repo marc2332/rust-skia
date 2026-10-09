@@ -43,7 +43,7 @@ jobs:
             runTests: false
             exampleArgs: ''
             generateArtifacts: false
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container: ghcr.io/pragmatrix/rust-skia-linux:latest
     env: 
       SKIA_DEBUG: 0
