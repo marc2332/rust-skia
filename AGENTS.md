@@ -3,10 +3,10 @@
 ## Repository structure
 
 - `skia-bindings/` - Low-level C++ bindings. Contains:
-  - `skia/` - Git submodule pointing to `rust-skia/skia` fork (tagged e.g. `m148-0.95.1`)
-  - `src/bindings.cpp` - C wrapper functions for Skia C++ APIs (parsed by bindgen)
-  - `src/shaper.cpp` - C wrappers for SkShaper / modules
-  - `Cargo.toml` - `[package.metadata] skia = "m148-X.Y.Z"` must match submodule tag
+  - `skia/` - Git submodule pointing to `rust-skia/skia` fork; the tag follows the scheme
+    `m<milestone>.<ordinal>` (see `docs/adr/0002-skia-fork-tags-are-milestone-plus-ordinal.md`)
+  - `src/*.cpp` - C wrapper functions for Skia C++ APIs (parsed by bindgen). One file per area, for example `bindings.cpp` (core), `ganesh.cpp`, `graphite.cpp`, `shaper.cpp`, `skottie.cpp`, `svg.cpp`, `vulkan.cpp`.
+  - `Cargo.toml` - `[package.metadata] skia = "m<milestone>.<ordinal>"` must match submodule tag
   - `build_support/` - Build configuration (e.g. `binaries_config.rs` for platform-specific logic)
 - `skia-safe/` - Safe Rust wrappers over `skia-bindings`. Mirrors Skia's include structure:
   - `src/core/` -> `include/core/`
@@ -35,15 +35,20 @@
 
 ## Skia milestone update checklist
 
-See the [Template: Skia Milestone Update PR](https://github.com/rust-skia/rust-skia/wiki/Template:-Skia-Milestone-Update-PR) wiki page.
+Task skills live in `.github/skills/`, and `.claude/skills/` links to them for Claude Code. Read
+the matching `SKILL.md` before a bindings change, a milestone update, or a release.
 
-Version numbering: Each milestone bump increments the minor version (e.g. 0.95.0 -> 0.96.0).
+Every Skia fork tag cut — a new milestone, a refresh from upstream, or a new fork patch — follows
+`.github/skills/skia-milestone-update/SKILL.md`. Versioning in short: crates are `0.XX.0` for
+milestone `mXX`; a same-milestone cut takes the next tag ordinal and keeps the crate version.
 
-For Skia submodule milestone include/API diffs, use direct
-`git -C skia-bindings/skia diff OLD_TAG..NEW_TAG -- ...` commands. Do not use
-`make diff-skia` for this; that target only compares rust-skia-specific commits
-in the Skia submodule against master (it is the "Do the `rust-skia:` commits ...
-match with `master`" checklist item, not an include-diff tool).
+Fork patches are named `rust-skia: <summary>`.
+
+`just diff-skia` range-diffs the fork patch stack of the submodule checkout (every commit on top of
+`upstream/chrome/mXX`) against the stack master records; it needs the `upstream` remote
+(google/skia) with both milestone branches fetched. It answers whether the fork patches match
+master; include/API diffs between milestones use direct
+`git -C skia-bindings/skia diff OLD_TAG..NEW_TAG -- ...` commands.
 
 ## Release notes
 

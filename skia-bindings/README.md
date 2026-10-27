@@ -7,7 +7,7 @@ This is a supporting package for [skia-safe](https://crates.io/crates/skia-safe)
 This package contains three components. 
 
 - First, full configuration and build support for Skia in [`build.rs`](build.rs) and  [`build_support/`](build_support/).
-- Additional C bindings to help out bindgen with stuff it has problems with or to work around linker errors. These are [`src/bindings.cpp`](src/bindings.cpp), and [`src/shaper.cpp`](src/shaper.cpp).
+- Additional C bindings to help out bindgen with stuff it has problems with or to work around linker errors. These are the `src/*.cpp` files, for example [`src/bindings.cpp`](src/bindings.cpp), [`src/shaper.cpp`](src/shaper.cpp), and [`src/ganesh.cpp`](src/ganesh.cpp).
 - And a number of functions that are used to download prebuilt binaries.
 
 ### Skia Build Support
@@ -15,6 +15,10 @@ This package contains three components.
 Building Skia is quite exceptional, a number of prerequisites need to be available and configured properly for the target platform.
 
 To configure and build Skia, [`build_support/skia.rs`](build_support/skia.rs) does all the hard work: it synchronizes Skia's additional dependencies by executing `skia/tools/git-sync-deps` with Python. After that, it configures Skia with Google's [GN](https://gn.googlesource.com/gn/+/refs/heads/master/README.md) tool, and finally builds it with the configured `ninja` executable.
+
+### The Skia Submodule
+
+A build from source initializes the `skia/` submodule when it is missing, but never moves an existing checkout: one that differs from the revision recorded in the repository is built as it is, and a warning reports both revisions. Run `git submodule update -- skia-bindings/skia` in the repository root to check out the recorded revision.
 
 ### Binding Generation
 
@@ -74,7 +78,7 @@ Also note that there is one exception here. [FreeType](https://freetype.org/) is
 
 ## Build Customization
 
-Besides the features `gl`, `vulkan`, `metal`, and `textlayout` that can be directly specified when the package is added as a cargo dependency, the Skia build can be customized further in `build.rs` by adjusting one of two structs that are defined in `build_support/skia.rs`:
+Besides the features `gl`, `vulkan`, `metal`, and `textlayout` that can be directly specified when the package is added as a cargo dependency, the Skia build can be customized further in `build.rs` by adjusting one of two structs that are defined in `build_support/skia/config.rs`:
 
 ### `BuildConfiguration`
 

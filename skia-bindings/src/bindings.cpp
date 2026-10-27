@@ -36,7 +36,7 @@
 #include "include/core/SkColorTable.h"
 #include "include/core/SkContext.h"
 #include "include/core/SkContextOptions.h"
-#include "include/core/SkCPURecorder.h"
+#include "include/cpu/Recorder.h"
 #include "include/core/SkContourMeasure.h"
 #include "include/core/SkCoverageMode.h"
 #include "include/core/SkCubicMap.h"
@@ -55,6 +55,7 @@
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkM44.h"
 #include "include/core/SkMaskFilter.h"
+#include "include/core/SkMesh.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkPathBuilder.h"
@@ -244,7 +245,7 @@ extern "C" void C_SkCodecs_Decoder_destruct(SkCodecs::Decoder* decoder) {
 }
 
 extern "C" SkImage* C_SkCodecs_DeferredImage(SkCodec* codec, const SkAlphaType* alphaType) {
-    return SkCodecs::DeferredImage(std::unique_ptr<SkCodec>(codec), alphaType ? std::optional(*alphaType) : std::nullopt).release();
+    return SkCodecs::DeferredImage(std::unique_ptr<SkCodec>(codec), opt(alphaType)).release();
 }
 
 //
@@ -433,6 +434,65 @@ extern "C" const SkSurfaceProps* C_SkSurface_props(const SkSurface* self) {
     return &self->props();
 }
 
+typedef void (*C_ReadPixelsCallback)(void* context, const SkImage::AsyncReadResult* result);
+
+// Skia's ReadPixelsCallback receives the result as a std::unique_ptr, which Rust can't take, so
+// the Rust callback and its context travel in ReadPixelsContext. Skia calls back exactly once,
+// which frees the closure.
+struct ReadPixelsClosure {
+    C_ReadPixelsCallback fCallback;
+    void* fContext;
+
+    static void Call(SkImage::ReadPixelsContext context,
+                     std::unique_ptr<const SkImage::AsyncReadResult> result) {
+        std::unique_ptr<ReadPixelsClosure> closure(static_cast<ReadPixelsClosure*>(context));
+        closure->fCallback(closure->fContext, result.release());
+    }
+};
+
+extern "C" void C_SkSurface_asyncRescaleAndReadPixels(
+        SkSurface* self,
+        const SkImageInfo* info,
+        const SkIRect* srcRect,
+        SkSurface::RescaleGamma rescaleGamma,
+        SkSurface::RescaleMode rescaleMode,
+        C_ReadPixelsCallback callback,
+        void* context) {
+    self->asyncRescaleAndReadPixels(
+        *info, *srcRect, rescaleGamma, rescaleMode,
+        ReadPixelsClosure::Call, new ReadPixelsClosure{callback, context});
+}
+
+extern "C" void C_SkSurface_asyncRescaleAndReadPixelsYUV420(
+        SkSurface* self,
+        SkYUVColorSpace yuvColorSpace,
+        SkColorSpace* dstColorSpace,
+        const SkIRect* srcRect,
+        const SkISize* dstSize,
+        SkSurface::RescaleGamma rescaleGamma,
+        SkSurface::RescaleMode rescaleMode,
+        C_ReadPixelsCallback callback,
+        void* context) {
+    self->asyncRescaleAndReadPixelsYUV420(
+        yuvColorSpace, sp(dstColorSpace), *srcRect, *dstSize, rescaleGamma, rescaleMode,
+        ReadPixelsClosure::Call, new ReadPixelsClosure{callback, context});
+}
+
+extern "C" void C_SkSurface_asyncRescaleAndReadPixelsYUVA420(
+        SkSurface* self,
+        SkYUVColorSpace yuvColorSpace,
+        SkColorSpace* dstColorSpace,
+        const SkIRect* srcRect,
+        const SkISize* dstSize,
+        SkSurface::RescaleGamma rescaleGamma,
+        SkSurface::RescaleMode rescaleMode,
+        C_ReadPixelsCallback callback,
+        void* context) {
+    self->asyncRescaleAndReadPixelsYUVA420(
+        yuvColorSpace, sp(dstColorSpace), *srcRect, *dstSize, rescaleGamma, rescaleMode,
+        ReadPixelsClosure::Call, new ReadPixelsClosure{callback, context});
+}
+
 //
 // core/SkImage.h
 //
@@ -544,6 +604,65 @@ extern "C" SkImage* C_SkImage_reinterpretColorSpace(const SkImage* self, SkColor
     return self->reinterpretColorSpace(sp(newColorSpace)).release();
 }
 
+extern "C" void C_SkImage_asyncRescaleAndReadPixels(
+        const SkImage* self,
+        const SkImageInfo* info,
+        const SkIRect* srcRect,
+        SkImage::RescaleGamma rescaleGamma,
+        SkImage::RescaleMode rescaleMode,
+        C_ReadPixelsCallback callback,
+        void* context) {
+    self->asyncRescaleAndReadPixels(
+        *info, *srcRect, rescaleGamma, rescaleMode,
+        ReadPixelsClosure::Call, new ReadPixelsClosure{callback, context});
+}
+
+extern "C" void C_SkImage_asyncRescaleAndReadPixelsYUV420(
+        const SkImage* self,
+        SkYUVColorSpace yuvColorSpace,
+        SkColorSpace* dstColorSpace,
+        const SkIRect* srcRect,
+        const SkISize* dstSize,
+        SkImage::RescaleGamma rescaleGamma,
+        SkImage::RescaleMode rescaleMode,
+        C_ReadPixelsCallback callback,
+        void* context) {
+    self->asyncRescaleAndReadPixelsYUV420(
+        yuvColorSpace, sp(dstColorSpace), *srcRect, *dstSize, rescaleGamma, rescaleMode,
+        ReadPixelsClosure::Call, new ReadPixelsClosure{callback, context});
+}
+
+extern "C" void C_SkImage_asyncRescaleAndReadPixelsYUVA420(
+        const SkImage* self,
+        SkYUVColorSpace yuvColorSpace,
+        SkColorSpace* dstColorSpace,
+        const SkIRect* srcRect,
+        const SkISize* dstSize,
+        SkImage::RescaleGamma rescaleGamma,
+        SkImage::RescaleMode rescaleMode,
+        C_ReadPixelsCallback callback,
+        void* context) {
+    self->asyncRescaleAndReadPixelsYUVA420(
+        yuvColorSpace, sp(dstColorSpace), *srcRect, *dstSize, rescaleGamma, rescaleMode,
+        ReadPixelsClosure::Call, new ReadPixelsClosure{callback, context});
+}
+
+extern "C" void C_SkImage_AsyncReadResult_delete(const SkImage::AsyncReadResult* self) {
+    delete self;
+}
+
+extern "C" int C_SkImage_AsyncReadResult_count(const SkImage::AsyncReadResult* self) {
+    return self->count();
+}
+
+extern "C" const void* C_SkImage_AsyncReadResult_data(const SkImage::AsyncReadResult* self, int i) {
+    return self->data(i);
+}
+
+extern "C" size_t C_SkImage_AsyncReadResult_rowBytes(const SkImage::AsyncReadResult* self, int i) {
+    return self->rowBytes(i);
+}
+
 //
 // core/SkData.h
 //
@@ -587,6 +706,10 @@ extern "C" SkData* C_SkData_MakeWithCString(const char* cstr) {
 
 extern "C" SkData* C_SkData_MakeWithoutCopy(const void* data, size_t length) {
     return SkData::MakeWithoutCopy(data, length).release();
+}
+
+extern "C" SkData* C_SkData_MakeWithProc(const void* ptr, size_t length, SkData::ReleaseProc proc, void* ctx) {
+    return SkData::MakeWithProc(ptr, length, proc, ctx).release();
 }
 
 extern "C" SkData* C_SkData_MakeFromFileName(const char cstr[]) {
@@ -951,7 +1074,7 @@ extern "C" void C_SkPathBuilder_delete(SkPathBuilder* self) {
     delete self;
 }
 
-extern "C" bool C_SkPathBuilder_equals(const SkPathBuilder* self, const SkPathBuilder* other) {
+extern "C" bool C_SkPathBuilder_Equals(const SkPathBuilder* self, const SkPathBuilder* other) {
     return *self == *other;
 }
 
@@ -1123,6 +1246,10 @@ extern "C" void C_SkCanvas_discard(SkCanvas* self) {
 
 extern "C" void C_SkCanvas_drawPoints(SkCanvas* self, SkCanvas::PointMode mode, const SkPoint* points, size_t pointCount, const SkPaint* paint) {
     self->drawPoints(mode, SkSpan(points, pointCount), *paint);
+}
+
+extern "C" void C_SkCanvas_drawMesh(SkCanvas* self, const SkMesh* mesh, SkBlender* blender, const SkPaint* paint) {
+    self->drawMesh(*mesh, sp(blender), *paint);
 }
 
 extern "C" void C_SkCanvas_drawGlyphs(
@@ -1352,7 +1479,7 @@ extern "C" uint64_t C_SkColorSpace_hash(const SkColorSpace* self) {
 
 extern "C" void C_SkM44_Types(SkV2 *) {};
 
-extern "C" bool C_SkM44_equals(const SkM44 *self, const SkM44 *other) {
+extern "C" bool C_SkM44_Equals(const SkM44 *self, const SkM44 *other) {
     return *self == *other;
 }
 
@@ -1531,6 +1658,255 @@ extern "C" SkShader* C_SkBitmap_makeShader(
 
 extern "C" SkImage* C_SkBitmap_asImage(const SkBitmap* self) {
     return self->asImage().release();
+}
+
+//
+// core/SkMesh.h
+//
+
+extern "C" void C_SkMeshSpecification_ref(const SkMeshSpecification* self) {
+    self->ref();
+}
+
+extern "C" void C_SkMeshSpecification_unref(const SkMeshSpecification* self) {
+    self->unref();
+}
+
+extern "C" bool C_SkMeshSpecification_unique(const SkMeshSpecification* self) {
+    return self->unique();
+}
+
+extern "C" void C_SkMeshSpecification_Attribute_Construct(
+    SkMeshSpecification::Attribute* uninitialized,
+    SkMeshSpecification::Attribute::Type type, size_t offset,
+    const char* name, size_t nameLength) {
+    new (uninitialized) SkMeshSpecification::Attribute{type, offset, SkString(name, nameLength)};
+}
+
+extern "C" void C_SkMeshSpecification_Attribute_CopyConstruct(
+    SkMeshSpecification::Attribute* uninitialized, const SkMeshSpecification::Attribute* attribute) {
+    new (uninitialized) SkMeshSpecification::Attribute(*attribute);
+}
+
+extern "C" void C_SkMeshSpecification_Attribute_destruct(SkMeshSpecification::Attribute* self) {
+    self->~Attribute();
+}
+
+extern "C" void C_SkMeshSpecification_Varying_Construct(
+    SkMeshSpecification::Varying* uninitialized,
+    SkMeshSpecification::Varying::Type type,
+    const char* name, size_t nameLength) {
+    new (uninitialized) SkMeshSpecification::Varying{type, SkString(name, nameLength)};
+}
+
+extern "C" void C_SkMeshSpecification_Varying_CopyConstruct(
+    SkMeshSpecification::Varying* uninitialized, const SkMeshSpecification::Varying* varying) {
+    new (uninitialized) SkMeshSpecification::Varying(*varying);
+}
+
+extern "C" void C_SkMeshSpecification_Varying_destruct(SkMeshSpecification::Varying* self) {
+    self->~Varying();
+}
+
+extern "C" SkMeshSpecification* C_SkMeshSpecification_Make(
+    const SkMeshSpecification::Attribute* attributes, size_t attributeCount,
+    size_t vertexStride,
+    const SkMeshSpecification::Varying* varyings, size_t varyingCount,
+    const SkString* vs, const SkString* fs,
+    SkString* error) {
+    auto r = SkMeshSpecification::Make(
+        SkSpan(attributes, attributeCount), vertexStride,
+        SkSpan(varyings, varyingCount),
+        *vs, *fs);
+    *error = r.error;
+    return r.specification.release();
+}
+
+// `at` is optional so that Skia's own default alpha type applies when it is not given.
+extern "C" SkMeshSpecification* C_SkMeshSpecification_MakeWithColorSpace(
+    const SkMeshSpecification::Attribute* attributes, size_t attributeCount,
+    size_t vertexStride,
+    const SkMeshSpecification::Varying* varyings, size_t varyingCount,
+    const SkString* vs, const SkString* fs,
+    SkColorSpace* cs, const SkAlphaType* at,
+    SkString* error) {
+    auto r = at
+        ? SkMeshSpecification::Make(
+            SkSpan(attributes, attributeCount), vertexStride,
+            SkSpan(varyings, varyingCount),
+            *vs, *fs, sp(cs), *at)
+        : SkMeshSpecification::Make(
+            SkSpan(attributes, attributeCount), vertexStride,
+            SkSpan(varyings, varyingCount),
+            *vs, *fs, sp(cs));
+    *error = r.error;
+    return r.specification.release();
+}
+
+extern "C" const SkMeshSpecification::Attribute* C_SkMeshSpecification_attributes(const SkMeshSpecification* self, size_t* count) {
+    auto attributes = self->attributes();
+    *count = attributes.size();
+    return attributes.data();
+}
+
+extern "C" size_t C_SkMeshSpecification_uniformSize(const SkMeshSpecification* self) {
+    return self->uniformSize();
+}
+
+extern "C" const SkRuntimeEffect::Uniform* C_SkMeshSpecification_uniforms(const SkMeshSpecification* self, size_t* count) {
+    auto uniforms = self->uniforms();
+    *count = uniforms.size();
+    return uniforms.data();
+}
+
+extern "C" const SkRuntimeEffect::Child* C_SkMeshSpecification_children(const SkMeshSpecification* self, size_t* count) {
+    auto children = self->children();
+    *count = children.size();
+    return children.data();
+}
+
+extern "C" const SkRuntimeEffect::Child* C_SkMeshSpecification_findChild(const SkMeshSpecification* self, const char* name, size_t count) {
+    return self->findChild(std::string_view(name, count));
+}
+
+extern "C" const SkRuntimeEffect::Uniform* C_SkMeshSpecification_findUniform(const SkMeshSpecification* self, const char* name, size_t count) {
+    return self->findUniform(std::string_view(name, count));
+}
+
+extern "C" const SkMeshSpecification::Attribute* C_SkMeshSpecification_findAttribute(const SkMeshSpecification* self, const char* name, size_t count) {
+    return self->findAttribute(std::string_view(name, count));
+}
+
+extern "C" const SkMeshSpecification::Varying* C_SkMeshSpecification_findVarying(const SkMeshSpecification* self, const char* name, size_t count) {
+    return self->findVarying(std::string_view(name, count));
+}
+
+extern "C" size_t C_SkMeshSpecification_stride(const SkMeshSpecification* self) {
+    return self->stride();
+}
+
+extern "C" SkColorSpace* C_SkMeshSpecification_colorSpace(const SkMeshSpecification* self) {
+    return self->colorSpace();
+}
+
+extern "C" size_t C_SkMesh_VertexBuffer_size(const SkMesh::VertexBuffer* self) {
+    return self->size();
+}
+
+extern "C" bool C_SkMesh_VertexBuffer_update(SkMesh::VertexBuffer* self, GrDirectContext* context, const void* data, size_t offset, size_t size) {
+    return self->update(context, data, offset, size);
+}
+
+extern "C" size_t C_SkMesh_IndexBuffer_size(const SkMesh::IndexBuffer* self) {
+    return self->size();
+}
+
+extern "C" bool C_SkMesh_IndexBuffer_update(SkMesh::IndexBuffer* self, GrDirectContext* context, const void* data, size_t offset, size_t size) {
+    return self->update(context, data, offset, size);
+}
+
+// Creates an indexed mesh if `ib` is not null. Returns `nullptr` and sets `error` if the mesh is
+// invalid.
+extern "C" SkMesh* C_SkMesh_Make(
+    SkMeshSpecification* spec,
+    SkMesh::Mode mode,
+    SkMesh::VertexBuffer* vb, size_t vertexCount, size_t vertexOffset,
+    SkMesh::IndexBuffer* ib, size_t indexCount, size_t indexOffset,
+    const SkData* uniforms,
+    SkRuntimeEffect::ChildPtr* children, size_t childCount,
+    const SkRect* bounds,
+    SkString* error) {
+    auto childSpan = SkSpan<SkRuntimeEffect::ChildPtr>(children, childCount);
+    sk_sp<const SkData> uniformData = sp(uniforms);
+    // SkMesh::validate() dereferences null uniforms while it formats the "uniform data is too
+    // small" error (m153-m155), so pass empty uniforms in this case.
+    if (!uniformData && spec->uniformSize() > 0) {
+        uniformData = SkData::MakeEmpty();
+    }
+    auto r = ib
+        ? SkMesh::MakeIndexed(
+            sp(spec), mode, sp(vb), vertexCount, vertexOffset,
+            sp(ib), indexCount, indexOffset,
+            std::move(uniformData), childSpan, *bounds)
+        : SkMesh::Make(
+            sp(spec), mode, sp(vb), vertexCount, vertexOffset,
+            std::move(uniformData), childSpan, *bounds);
+    *error = r.error;
+    return r.mesh.isValid() ? new SkMesh(std::move(r.mesh)) : nullptr;
+}
+
+extern "C" SkMesh* C_SkMesh_clone(const SkMesh* self) {
+    return new SkMesh(*self);
+}
+
+extern "C" void C_SkMesh_delete(SkMesh* self) {
+    delete self;
+}
+
+extern "C" SkMeshSpecification* C_SkMesh_refSpec(const SkMesh* self) {
+    return self->refSpec().release();
+}
+
+extern "C" SkMesh::Mode C_SkMesh_mode(const SkMesh* self) {
+    return self->mode();
+}
+
+extern "C" SkMesh::VertexBuffer* C_SkMesh_refVertexBuffer(const SkMesh* self) {
+    return self->refVertexBuffer().release();
+}
+
+extern "C" size_t C_SkMesh_vertexOffset(const SkMesh* self) {
+    return self->vertexOffset();
+}
+
+extern "C" size_t C_SkMesh_vertexCount(const SkMesh* self) {
+    return self->vertexCount();
+}
+
+extern "C" SkMesh::IndexBuffer* C_SkMesh_refIndexBuffer(const SkMesh* self) {
+    return self->refIndexBuffer().release();
+}
+
+extern "C" size_t C_SkMesh_indexOffset(const SkMesh* self) {
+    return self->indexOffset();
+}
+
+extern "C" size_t C_SkMesh_indexCount(const SkMesh* self) {
+    return self->indexCount();
+}
+
+extern "C" const SkData* C_SkMesh_refUniforms(const SkMesh* self) {
+    return self->refUniforms().release();
+}
+
+extern "C" const SkRuntimeEffect::ChildPtr* C_SkMesh_children(const SkMesh* self, size_t* count) {
+    auto children = self->children();
+    *count = children.size();
+    return children.data();
+}
+
+extern "C" void C_SkMesh_bounds(const SkMesh* self, SkRect* bounds) {
+    *bounds = self->bounds();
+}
+
+extern "C" bool C_SkMesh_isValid(const SkMesh* self) {
+    return self->isValid();
+}
+
+extern "C" SkMesh::IndexBuffer* C_SkMeshes_MakeIndexBuffer(const void* data, size_t size) {
+    return SkMeshes::MakeIndexBuffer(data, size).release();
+}
+
+extern "C" SkMesh::IndexBuffer* C_SkMeshes_CopyIndexBuffer(const SkMesh::IndexBuffer* src) {
+    return SkMeshes::CopyIndexBuffer(sk_ref_sp(const_cast<SkMesh::IndexBuffer*>(src))).release();
+}
+
+extern "C" SkMesh::VertexBuffer* C_SkMeshes_MakeVertexBuffer(const void* data, size_t size) {
+    return SkMeshes::MakeVertexBuffer(data, size).release();
+}
+
+extern "C" SkMesh::VertexBuffer* C_SkMeshes_CopyVertexBuffer(const SkMesh::VertexBuffer* src) {
+    return SkMeshes::CopyVertexBuffer(sk_ref_sp(const_cast<SkMesh::VertexBuffer*>(src))).release();
 }
 
 //
@@ -2972,7 +3348,7 @@ extern "C" int C_SkYUVAInfo_NumChannelsInPlane(SkYUVAInfo::PlaneConfig planarCon
     return SkYUVAInfo::NumChannelsInPlane(planarConfig, i);
 }
 
-extern "C" bool C_SkYUVAInfo_equals(const SkYUVAInfo* a, const SkYUVAInfo* b) {
+extern "C" bool C_SkYUVAInfo_Equals(const SkYUVAInfo* a, const SkYUVAInfo* b) {
     return *a == *b;
 }
 
@@ -2996,7 +3372,7 @@ extern "C" void C_SkYUVAPixmapInfo_destruct(SkYUVAPixmapInfo* self) {
     self->~SkYUVAPixmapInfo();
 }
 
-extern "C" bool C_SkYUVAPixmapInfo_equals(const SkYUVAPixmapInfo* a, const SkYUVAPixmapInfo* b) {
+extern "C" bool C_SkYUVAPixmapInfo_Equals(const SkYUVAPixmapInfo* a, const SkYUVAPixmapInfo* b) {
     return *a == *b;
 }
 

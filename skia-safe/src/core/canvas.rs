@@ -15,10 +15,10 @@ use crate::gpu::graphite;
 use crate::gpu::{DirectContext, RecordingContext};
 use crate::{Arc, ColorSpace};
 use crate::{
-    Bitmap, BlendMode, ClipOp, Color, Color4f, Data, Drawable, FilterMode, Font, GlyphId, IPoint,
-    IRect, ISize, Image, ImageFilter, ImageInfo, M44, Matrix, Paint, Path, Picture, Pixmap, Point,
-    QuickReject, RRect, RSXform, Rect, Region, SamplingOptions, Shader, Surface, SurfaceProps,
-    TextBlob, TextEncoding, TileMode, Vector, Vertices, prelude::*, scalar,
+    Bitmap, BlendMode, Blender, ClipOp, Color, Color4f, Data, Drawable, FilterMode, Font, GlyphId,
+    IPoint, IRect, ISize, Image, ImageFilter, ImageInfo, M44, Matrix, Mesh, Paint, Path, Picture,
+    Pixmap, Point, QuickReject, RRect, RSXform, Rect, Region, SamplingOptions, Shader, Surface,
+    SurfaceProps, TextBlob, TextEncoding, TileMode, Vector, Vertices, prelude::*, scalar,
 };
 
 pub use lattice::Lattice;
@@ -2049,6 +2049,44 @@ impl Canvas {
         unsafe {
             self.native_mut()
                 .drawVertices(vertices.native(), mode, paint.native())
+        }
+        self
+    }
+
+    /// Experimental, under active development, and subject to change without notice.
+    ///
+    /// Draws a mesh using a user-defined specification (see [`crate::MeshSpecification`]).
+    /// Requires a GPU backend or SkSL to be compiled in.
+    ///
+    /// [`Blender`] is ignored if [`Mesh`]'s specification does not output fragment shader color.
+    /// Otherwise, it combines
+    /// - the [`Shader`] if [`Paint`] contains [`Shader`]
+    /// - or the opaque [`Paint`] color if [`Paint`] does not contain [`Shader`]
+    ///
+    /// as the src of the blend and the mesh's fragment color as the dst.
+    ///
+    /// [`crate::MaskFilter`], [`crate::PathEffect`], and antialiasing on [`Paint`] are ignored.
+    ///
+    /// Note: The raster, PDF, and SVG backends ignore meshes; Ganesh and Graphite draw them.
+    ///
+    /// - `mesh` the mesh vertices and compatible specification.
+    /// - `blender` combines vertices colors with [`Shader`] if present or [`Paint`] opaque color
+    ///   if not. Ignored if the custom mesh does not output color. Defaults to
+    ///   [`BlendMode::Modulate`] if `None`.
+    /// - `paint` specifies the [`Shader`], used as [`Vertices`] texture
+    pub fn draw_mesh(
+        &self,
+        mesh: &Mesh,
+        blender: impl Into<Option<Blender>>,
+        paint: &Paint,
+    ) -> &Self {
+        unsafe {
+            sb::C_SkCanvas_drawMesh(
+                self.native_mut(),
+                mesh.native(),
+                blender.into().into_ptr_or_null(),
+                paint.native(),
+            )
         }
         self
     }

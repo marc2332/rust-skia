@@ -88,7 +88,15 @@ skia-svg-macros = { package = "freya-skia-svg-macros", version = "=0.104.0", pat
 
 serial_test = "4.0"
 static_assertions = "1.1"
-winit = "0.30.2"
+# winit's default features, except that the Wayland window decorations draw no title text. The
+# default title renderer pulls in the unmaintained `ttf-parser` crate (RUSTSEC-2026-0192).
+winit = { version = "0.30.2", default-features = false, features = [
+    "rwh_06",
+    "x11",
+    "wayland",
+    "wayland-dlopen",
+    "wayland-csd-adwaita-notitle",
+] }
 
 # icon & gl-window examples
 skia-icon = { path = "../skia-icon" }
@@ -135,7 +143,7 @@ windows = { version = "0.62.0", features = [
 
 # dotlottie example
 [dev-dependencies.zip]
-version = "8.1"
+version = "9.0"
 
 [dev-dependencies.serde]
 version = "1.0"

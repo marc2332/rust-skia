@@ -6,7 +6,7 @@ Update it whenever you learn something new about the project's patterns, convent
 ## Project
 - Follow the existing project structure and idioms.
 - Prefer small, self-contained changes unless explicitly asked for broader refactors.
-- Update generated GitHub workflows through `mk-workflows`, then run `make workflows`; do not edit generated workflow YAML directly.
+- Update generated GitHub workflows through `mk-workflows`, then run `just workflows`; do not edit generated workflow YAML directly.
 - For targeted ports (for example, "add missing bindings"), keep diffs strictly scoped to the missing API surface.
 - Do not refactor adjacent working code unless it is required for correctness, compatibility, or explicitly requested.
 
@@ -27,6 +27,7 @@ Update it whenever you learn something new about the project's patterns, convent
 ## Safety & Quality
 - Add or update tests when modifying behavior.
 - Preserve backwards compatibility unless instructed otherwise.
+- For binding and wrapper mechanics (C shims, wrapper kinds, ownership, `Send`/`Sync`, and the exceptions to these rules), follow the `rust-skia-bindings` skill.
 - When refactoring, don't add trait implementations (Clone, Debug, Default, etc.) that weren't present in the original code.
 - If a trait can't be derived due to field constraints, investigate whether the trait is actually needed before implementing it manually.
 - Keep reduced-feature builds and tests working: code and tests that rely on optional components should be gated or provide safe fallbacks when those components are disabled.
@@ -41,6 +42,7 @@ Update it whenever you learn something new about the project's patterns, convent
 ## Skills
 The following is the complete list of workspace skills:
 - [`cpp-to-rust-documentation`](skills/cpp-to-rust-documentation/SKILL.md): use when porting documentation from Skia C++ headers to Rust APIs.
+- [`rust-skia-bindings`](skills/rust-skia-bindings/SKILL.md): use when creating or updating bindings and wrappers — C shims in `skia-bindings/src/*.cpp`, wrapper kinds, `sk_sp`/ownership idioms, and the exceptions where the normal pattern does not apply.
 - [`rust-skia-release-publishing`](skills/rust-skia-release-publishing/SKILL.md): use when publishing a previously verified rust-skia release to crates.io and GitHub.
 - [`rust-skia-release-verification`](skills/rust-skia-release-verification/SKILL.md): use when verifying release commits, CI, artifacts, images, packaging, and notes before publication.
 - [`skia-milestone-update`](skills/skia-milestone-update/SKILL.md): use when updating Skia to a milestone or refreshing the current milestone from its upstream `chrome/mXX` branch.
@@ -48,7 +50,7 @@ The following is the complete list of workspace skills:
 ## Documentation
 - Markdown documentation updates to existing files are fine.
 - Ask before creating new Markdown documentation files.
-- Verify documentation links with `make doc`.
+- Verify documentation links with `just doc`.
 - Use `[`Self::method()`]` instead of `[`method(&self)`]` for intra-doc links to methods.
 - Escape array indexing in comments (e.g., `` `pts[0]` ``) to avoid them being interpreted as links.
 - Use fully qualified paths (e.g., `[`crate::Canvas`]`) if the type is not in the immediate scope.

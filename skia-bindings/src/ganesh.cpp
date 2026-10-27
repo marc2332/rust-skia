@@ -2,7 +2,7 @@
 
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorSpace.h"
-#include "include/core/SkCPURecorder.h"
+#include "include/cpu/Recorder.h"
 #include "include/core/SkDrawable.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkSurface.h"
@@ -11,6 +11,7 @@
 #include "include/gpu/ganesh/GrDirectContext.h"
 #include "include/gpu/ganesh/GrYUVABackendTextures.h"
 #include "include/gpu/ganesh/SkImageGanesh.h"
+#include "include/gpu/ganesh/SkMeshGanesh.h"
 #include "include/gpu/ganesh/SkSurfaceGanesh.h"
 
 // Size / Alignment proxy for GrContextOptions
@@ -124,20 +125,24 @@ extern "C" skcpu::Recorder* C_GrRecordingContext_makeCPURecorder(GrRecordingCont
     return self->makeCPURecorder().release();
 }
 
-extern "C" void C_GrDirectContext_flushAndSubmit(GrDirectContext* self) {
-    self->flushAndSubmit();
+extern "C" void C_GrDirectContext_flushAndSubmit(GrDirectContext* self, GrSyncCpu sync, GrDirectContext::FlushResult* result) {
+    *result = self->flushAndSubmit(sync);
 }
 
-extern "C" GrSemaphoresSubmitted C_GrDirectContext_flushImageWithInfo(GrDirectContext* self, SkImage* image, const GrFlushInfo* info) {
-    return self->flush(sp(image), *info);
+extern "C" void C_GrDirectContext_flush(GrDirectContext* self, const GrFlushInfo* info, GrDirectContext::FlushResult* result) {
+    *result = self->flush(*info);
 }
 
-extern "C" void C_GrDirectContext_flushImage(GrDirectContext* self, SkImage* image) {
-    self->flush(sp(image));
+extern "C" void C_GrDirectContext_flushImageWithInfo(GrDirectContext* self, SkImage* image, const GrFlushInfo* info, GrDirectContext::FlushResult* result) {
+    *result = self->flush(sp(image), *info);
 }
 
-extern "C" void C_GrDirectContext_flushAndSubmitImage(GrDirectContext* self, SkImage* image) {
-    self->flushAndSubmit(sp(image));
+extern "C" void C_GrDirectContext_flushSurfaceWithAccess(GrDirectContext* self, SkSurface* surface, SkSurfaces::BackendSurfaceAccess access, const GrFlushInfo* info, GrDirectContext::FlushResult* result) {
+    *result = self->flush(surface, access, *info);
+}
+
+extern "C" void C_GrDirectContext_flushSurfaceWithTextureState(GrDirectContext* self, SkSurface* surface, const GrFlushInfo* info, const skgpu::MutableTextureState* newState, GrDirectContext::FlushResult* result) {
+    *result = self->flush(surface, *info, newState);
 }
 
 extern "C" void C_GrDirectContext_compressedBackendFormat(const GrDirectContext* self, SkTextureCompressionType compression, GrBackendFormat* result) {
@@ -168,7 +173,7 @@ extern "C" void C_GrYUVABackendTextureInfo_CopyConstruct(GrYUVABackendTextureInf
     new(uninitialized) GrYUVABackendTextureInfo(*src);
 }
 
-extern "C" bool C_GrYUVABackendTextureInfo_equals(const GrYUVABackendTextureInfo* a, const GrYUVABackendTextureInfo* b) {
+extern "C" bool C_GrYUVABackendTextureInfo_Equals(const GrYUVABackendTextureInfo* a, const GrYUVABackendTextureInfo* b) {
     return *a == *b;
 }
 
@@ -370,4 +375,24 @@ extern "C" void C_SkSurfaces_GetBackendRenderTarget(
 extern "C" void C_SkSurfaces_ResolveMSAA(SkSurface* surface)
 {
     SkSurfaces::ResolveMSAA(surface);
+}
+
+//
+// gpu/ganesh/SkMeshGanesh.h
+//
+
+extern "C" SkMesh::IndexBuffer* C_SkMeshes_MakeIndexBufferGanesh(GrDirectContext* context, const void* data, size_t size) {
+    return SkMeshes::MakeIndexBuffer(context, data, size).release();
+}
+
+extern "C" SkMesh::IndexBuffer* C_SkMeshes_CopyIndexBufferGanesh(GrDirectContext* context, const SkMesh::IndexBuffer* src) {
+    return SkMeshes::CopyIndexBuffer(context, sk_ref_sp(const_cast<SkMesh::IndexBuffer*>(src))).release();
+}
+
+extern "C" SkMesh::VertexBuffer* C_SkMeshes_MakeVertexBufferGanesh(GrDirectContext* context, const void* data, size_t size) {
+    return SkMeshes::MakeVertexBuffer(context, data, size).release();
+}
+
+extern "C" SkMesh::VertexBuffer* C_SkMeshes_CopyVertexBufferGanesh(GrDirectContext* context, const SkMesh::VertexBuffer* src) {
+    return SkMeshes::CopyVertexBuffer(context, sk_ref_sp(const_cast<SkMesh::VertexBuffer*>(src))).release();
 }

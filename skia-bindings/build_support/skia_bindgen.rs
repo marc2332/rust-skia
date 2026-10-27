@@ -505,6 +505,9 @@ const OPAQUE_TYPES: &[&str] = &[
     "std::unordered_map.*",
     // Graphite types that expose std::unordered_set in public fields
     "skgpu::graphite::Recording",
+    // SkMesh.h: std::vector and STArray fields, only used through pointers.
+    "SkMeshSpecification",
+    "SkMesh",
 ];
 
 const BLOCKLISTED_TYPES: &[&str] = &[
@@ -647,6 +650,8 @@ const ENUM_REWRITES: &[EnumEntry] = &[
     // SkImage_*
     ("BitDepth", rewrite::k_xxx),
     ("CachingHint", rewrite::k_xxx_name),
+    ("RescaleGamma", rewrite::k_xxx),
+    ("RescaleMode", rewrite::k_xxx),
     ("SkTextureCompressionType", rewrite::k_xxx),
     // SkImageFilter_MapDirection
     ("MapDirection", rewrite::k_xxx_name),

@@ -28,7 +28,7 @@ impl NativeClone for sb::skia_textlayout_StrutStyle {
 
 impl NativePartialEq for sb::skia_textlayout_StrutStyle {
     fn eq(&self, rhs: &Self) -> bool {
-        unsafe { sb::C_StrutStyle_equals(self, rhs) }
+        unsafe { sb::C_StrutStyle_Equals(self, rhs) }
     }
 }
 
@@ -249,7 +249,7 @@ impl ParagraphStyle {
 
     pub fn max_lines(&self) -> Option<usize> {
         match self.native().fLinesLimit {
-            std::usize::MAX => None,
+            usize::MAX => None,
             lines => Some(lines),
         }
     }

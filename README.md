@@ -2,10 +2,10 @@
 
 [![crates.io](https://img.shields.io/crates/v/skia-safe)](https://crates.io/crates/skia-safe) [![license](https://img.shields.io/crates/l/skia-safe)](LICENSE) [![docs.rs](https://docs.rs/skia-safe/badge.svg)](https://docs.rs/skia-safe) [![Windows QA](https://github.com/rust-skia/rust-skia/actions/workflows/windows-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/windows-qa.yaml) [![Linux QA](https://github.com/rust-skia/rust-skia/actions/workflows/linux-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/linux-qa.yaml) [![macOS QA](https://github.com/rust-skia/rust-skia/actions/workflows/macos-qa.yaml/badge.svg?branch=master)](https://github.com/rust-skia/rust-skia/actions/workflows/macos-qa.yaml)
 
-Skia Submodule Status: chrome/m153 ([upstream changes][skia-upstream], [our changes][skia-ours]).
+Skia Submodule Status: chrome/m156 ([upstream changes][skia-upstream], [our changes][skia-ours]).
 
-[skia-upstream]: https://github.com/rust-skia/skia/compare/m153-0.101.2...google:chrome/m153
-[skia-ours]: https://github.com/google/skia/compare/chrome/m153...rust-skia:m153-0.101.2
+[skia-upstream]: https://github.com/rust-skia/skia/compare/m156.5...google:chrome/m156
+[skia-ours]: https://github.com/google/skia/compare/chrome/m156...rust-skia:m156.5
 
 ## About
 
@@ -31,14 +31,20 @@ in your project's folder. And you might want to take a look at the [gl-window](h
 
 Because building Skia takes a lot of time and needs tools that may be missing, the skia-bindings crate's `build.rs` attempts to download prebuilt binaries from [the skia-binaries repository](https://github.com/rust-skia/skia-binaries/releases) using the `curl` command line tool.
 
-| Platform                          | Binaries                                                   |
-| --------------------------------- | ---------------------------------------------------------- |
-| Windows                           | `x86_64-pc-windows-msvc`<br/>`aarch64-pc-windows-msvc`     |
-| Linux Ubuntu 16+<br />CentOS 7, 8 | `x86_64-unknown-linux-gnu`<br/>`aarch64-unknown-linux-gnu` |
-| macOS                             | `x86_64-apple-darwin`<br/>`aarch64-apple-darwin`           |
-| Android                           | `aarch64-linux-android`<br/>`x86_64-linux-android`         |
-| iOS                               | `aarch64-apple-ios`<br/>`aarch64-apple-ios-sim`<br/>`x86_64-apple-ios` |
-| WebAssembly                       | `wasm32-unknown-emscripten`                                |
+| Platform                                         | Binaries                                                                   |
+| ------------------------------------------------ | -------------------------------------------------------------------------- |
+| Windows                                          | `x86_64-pc-windows-msvc`<br/>`aarch64-pc-windows-msvc`                     |
+| Linux (glibc ≥ 2.31, libstdc++ ≥ GLIBCXX_3.4.28) | `x86_64-unknown-linux-gnu`<br/>`aarch64-unknown-linux-gnu`                 |
+| macOS                                            | `x86_64-apple-darwin`<br/>`aarch64-apple-darwin`                           |
+| Android                                          | `aarch64-linux-android`<br/>`x86_64-linux-android`                         |
+| iOS                                              | `aarch64-apple-ios`<br/>`aarch64-apple-ios-sim`<br/>`x86_64-apple-ios`     |
+| WebAssembly                                      | `wasm32-unknown-emscripten`                                                |
+
+The glibc and libstdc++ requirements are those of the container the binaries are built in, so they
+are at least [Ubuntu 20.04](https://en.wikipedia.org/wiki/Ubuntu_version_history), Debian 11, Fedora 32,
+and CentOS Stream 9. The build script does not detect this on its own: on an older system the
+downloaded binaries fail to link. In that case, set `FORCE_SKIA_BUILD=1` (or disable the
+`binary-cache` feature) to build Skia from source instead.
 
 ### Wrappers & Codecs & Supported Features
 
@@ -173,7 +179,7 @@ _Notes:_
 
 ### For iOS
 
-Compilation to iOS is supported on macOS targeting the iOS simulator (`--target x86_64-apple-ios`) and 64 bit ARM devices (`--target aarch64-apple-ios`). The ARM64**e** architecture is [not supported yet](https://github.com/rust-lang/rust/issues/73628).
+Compilation to iOS is supported on macOS targeting the iOS simulator (`--target x86_64-apple-ios` and `--target aarch64-apple-ios-sim`) and 64 bit ARM devices (`--target aarch64-apple-ios`). The ARM64**e** architecture is [not supported yet](https://github.com/rust-lang/rust/issues/73628).
 
 ### For visionOS
 

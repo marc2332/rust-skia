@@ -81,6 +81,7 @@ mod core {
     assert_impl_all!(Image: Send, Sync);
     assert_impl_all!(image::CubicResampler: Send, Sync);
     assert_impl_all!(image::BitDepth: Send, Sync);
+    assert_impl_all!(image::AsyncReadResult: Send, Sync);
     assert_impl_all!(image::RequiredProperties: Send, Sync);
 
     assert_impl_all!(ImageFilter: Send, Sync);
@@ -93,6 +94,16 @@ mod core {
     assert_impl_all!(Matrix: Send, Sync);
     assert_impl_all!(matrix::ScaleToFit: Send, Sync);
     assert_impl_all!(matrix::TypeMask: Send, Sync);
+
+    assert_not_impl_any!(Mesh: Send, Sync);
+    assert_impl_all!(MeshSpecification: Send, Sync);
+    assert_impl_all!(mesh::Attribute: Send, Sync);
+    assert_impl_all!(mesh::attribute::Type: Send, Sync);
+    assert_impl_all!(mesh::Varying: Send, Sync);
+    assert_impl_all!(mesh::varying::Type: Send, Sync);
+    assert_impl_all!(mesh::Mode: Send, Sync);
+    assert_not_impl_any!(mesh::VertexBuffer: Send, Sync);
+    assert_not_impl_any!(mesh::IndexBuffer: Send, Sync);
 
     assert_impl_all!(Paint: Send, Sync);
 
@@ -240,6 +251,7 @@ mod gpu {
         assert_impl_all!(gpu::Renderable: Send, Sync);
         assert_impl_all!(gpu::SurfaceOrigin: Send, Sync);
         assert_not_impl_any!(gpu::FlushInfo: Send, Sync);
+        assert_impl_all!(gpu::FlushError: Send, Sync);
         assert_impl_all!(gpu::SemaphoresSubmitted: Send, Sync);
         assert_impl_all!(gpu::PurgeResourceOptions: Send, Sync);
         assert_impl_all!(gpu::SyncCpu: Send, Sync);
