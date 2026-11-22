@@ -132,6 +132,7 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
         HostOS::WindowsArm => {
             vec![
                 "d3d,svg,textlayout,webp".into(),
+                "gl,svg,textlayout,vulkan,webp".into(),
                 "svg,textlayout,webp".into(),
             ]
         }

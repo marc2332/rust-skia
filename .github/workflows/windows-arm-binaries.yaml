@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features: ["svg,textlayout,webp", "d3d,svg,textlayout,webp"]
+        features: ["svg,textlayout,webp", "d3d,svg,textlayout,webp", "gl,svg,textlayout,vulkan,webp"]
         target: ["aarch64-pc-windows-msvc"]
         include:
           - target: aarch64-pc-windows-msvc
