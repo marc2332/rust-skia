@@ -77,6 +77,14 @@ fn main() -> Result<(), io::Error> {
 
             println!("STARTING OFFLINE BUILD");
 
+            if features["textlayout"] {
+                cargo::rerun_if_file_changed(source_dir.join("third_party/icu"));
+                let icu_data = source_dir.join("third_party/externals/icu/common/icudtl.dat");
+                if icu_data.is_file() {
+                    cargo::rerun_if_file_changed(icu_data);
+                }
+            }
+
             let final_build_configuration = build_from_source(
                 features.clone(),
                 &binaries_config,
