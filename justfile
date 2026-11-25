@@ -129,7 +129,7 @@ publish-safe:
 
 # Generate the bindings with the docs.rs features and copy them to `/tmp/bindings.rs`.
 bindings-docs:
-    cargo build -vv --features {{ doc_features_docs_rs }}
+    cargo build -vv -p freya-skia-safe --lib --features {{ doc_features_docs_rs }}
     cp "$({{ bindings_latest }})" /tmp/bindings.rs
 
 # Build the skia-safe documentation and push it to rust-skia.github.io.
