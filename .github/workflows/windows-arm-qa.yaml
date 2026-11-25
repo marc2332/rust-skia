@@ -30,7 +30,7 @@ jobs:
             exampleArgs: '--driver cpu --driver pdf --driver svg'
             generateArtifacts: true
             features: 'd3d,gl,skottie,svg,textlayout,ureq,vulkan,webp'
-    runs-on: blacksmith-4vcpu-windows-2025
+    runs-on: windows-11-arm
     # Containers are not supported on Windows.
     # container: ghcr.io/marc2332/rust-skia-windows:latest
     env:
