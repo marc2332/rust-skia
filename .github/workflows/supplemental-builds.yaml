@@ -212,11 +212,11 @@ jobs:
 
     - name: 'Run Clippy for skia-safe with no default features and no PDF'
       run: |
-        cargo clippy -p skia-safe --no-default-features -- -Dwarnings
+        cargo clippy -p freya-skia-safe --no-default-features -- -Dwarnings
 
     - name: 'Test skia-safe with no default features and no PDF'
       run: |
-        cargo test -p skia-safe --no-default-features
+        cargo test -p freya-skia-safe --no-default-features
       env:
         RUSTFLAGS: '-Dwarnings'
 
