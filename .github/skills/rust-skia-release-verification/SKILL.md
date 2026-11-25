@@ -21,10 +21,9 @@ release.
    dry-runs `skia-svg-macros` packaging when that crate changed. Its output ends
    with a `Summary:` block that lists every check that passed.
 2. Run `just release-verify-images <previous-version> <commit>` and inspect every
-   reported difference. This compares the CPU-rendered PNGs across every
-   platform that produces QA artifacts (linux, macos, windows, windows-arm).
-   The candidate comes from the `master` QA run at the exact release commit,
-   because pushing `release` triggers binary workflows but not QA workflows.
+   reported difference. This compares Windows ARM CPU-rendered PNGs by default.
+   Dispatch `qa.yaml` on a branch at the exact release commit if no run there
+   has uploaded the Windows ARM images yet.
    Read `/tmp/rust-skia-release-images/comparison/summary.tsv` and inspect its
    `review` directory. Exit status 0 is an exact match, 1 means differences
    require review, and 2 means the check could not run. Added, removed, resized,

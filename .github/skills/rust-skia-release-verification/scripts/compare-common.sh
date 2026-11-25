@@ -11,32 +11,44 @@ resolve_shas() {
     release_sha="$(git rev-parse "$commit^{commit}")"
 }
 
-# Find the most recent successful run of a workflow at a commit.
+# Find the newest completed run at the commit that still has the artifact.
 find_run() {
-    local sha="$1" workflow="$2"
-    gh run list --repo "$repo" --workflow "$workflow" --commit "$sha" \
-        --status success --limit 100 --json databaseId --jq '.[0].databaseId // empty'
+    local sha="$1" workflow="$2" artifact="$3" run_ids run artifact_id
+    run_ids="$(gh run list --repo "$repo" --workflow "$workflow" --commit "$sha" \
+        --status completed --limit 100 --json databaseId --jq '.[].databaseId')" || return 1
+    for run in $run_ids; do
+        artifact_id="$(gh api --method GET "repos/$repo/actions/runs/$run/artifacts" \
+            -f name="$artifact" --jq '.artifacts[] | select(.expired == false) | .id')" || return 1
+        if [[ -n "$artifact_id" ]]; then
+            echo "$run"
+            return 0
+        fi
+    done
 }
 
-# Resolve the run to use for a workflow: an explicit override from `runs`
-# (space-separated "workflow:run" pairs) if present, otherwise the most recent
-# successful run at the commit.
 resolve_run() {
-    local workflow="$1" run
-    run="$(awk -v w="$workflow" -F: '$1 == w { print $2; exit }' <<<"$runs")"
+    local workflow="$1" sha="$2" artifact="$3" run run_sha
+    run="$(awk -v workflow="$workflow" -F: '$1 == workflow { print $2; exit }' <<<"$runs")"
     if [[ -n "$run" ]]; then
-        echo "$run"
-    else
-        find_run "$2" "$workflow"
+        run_sha="$(gh run view "$run" --repo "$repo" --json headSha --jq '.headSha')" || return 1
+        if [[ "$run_sha" == "$sha" ]]; then
+            echo "$run"
+            return 0
+        fi
     fi
+
+    if [[ "$workflow:$artifact" == qa.yaml:skia-org-images-aarch64-pc-windows-msvc ]] &&
+        git cat-file -e "$sha:.github/workflows/windows-arm-qa.yaml"; then
+        workflow=windows-arm-qa.yaml
+    fi
+    find_run "$sha" "$workflow" "$artifact"
 }
 
-# Download an artifact from a successful run of a workflow at a commit.
 download_images() {
     local sha="$1" output="$2" workflow="$3" artifact="$4" run
-    run="$(resolve_run "$workflow" "$sha")"
+    run="$(resolve_run "$workflow" "$sha" "$artifact")" || exit 2
     [[ -n "$run" ]] || {
-        echo "No successful $workflow run found for $sha" >&2
+        echo "No completed run with $artifact found for $sha" >&2
         exit 2
     }
     echo "Downloading $artifact from $workflow run $run ($sha)"

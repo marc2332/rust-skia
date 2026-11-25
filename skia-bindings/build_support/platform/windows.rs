@@ -43,8 +43,7 @@ impl PlatformDetails for Msvc {
         // Setting `target_cpu` to `i686` or `x86`, nightly builds would lead to
         // > 'C:/Program' is not recognized as an internal or external command
         //
-        // Without it, the executables pop out just fine. See the GH job
-        // `supplemental-builds/windows-x86`.
+        // Let clang infer the CPU for i686 builds.
         {
             let arch = &config.target.architecture;
             if arch != "i686" {

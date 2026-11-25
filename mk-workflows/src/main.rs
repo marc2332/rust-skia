@@ -21,7 +21,10 @@ const TARGET_TEMPLATE: &str = include_str!("templates/target.yaml");
 
 fn main() {
     for workflow in config::workflows() {
-        build_workflow(&workflow, &config::jobs(&workflow));
+        let jobs = config::jobs(&workflow);
+        if !jobs.is_empty() {
+            build_workflow(&workflow, &jobs);
+        }
     }
 }
 

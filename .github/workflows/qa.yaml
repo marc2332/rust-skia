@@ -1,37 +1,104 @@
 name: 'qa'
 on:
   push:
+    branches: [freya]
   pull_request:
-  # The nightly run catches vulnerabilities that are published after a change was merged.
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  qa:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    container: ghcr.io/marc2332/rust-skia-linux:latest
+  smoke:
+    name: Smoke check (${{ matrix.os }})
+    if: github.event_name != 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: Linux
+            runner: blacksmith-4vcpu-ubuntu-2404
+            container: ghcr.io/marc2332/rust-skia-linux:latest
+            features: gl,svg,textlayout,vulkan,wayland,webp,x11
+          - os: macOS
+            runner: blacksmith-6vcpu-macos-15
+            features: ganesh,gl,metal,svg,textlayout,webp
+          - os: Windows
+            runner: blacksmith-4vcpu-windows-2025
+            features: gl,svg,textlayout,vulkan,webp
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.container }}
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_TARGET_DIR: target
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Fetch Skia submodule tags
+        persist-credentials: false
+
+    - name: Prepare Linux container
+      if: matrix.os == 'Linux'
       run: |
-        git -C skia-bindings/skia fetch --tags --force
-    - name: Check Skia metadata
+        git config --global --add safe.directory '*'
+        if [ ! -e "$HOME/.cargo" ]; then
+          ln -s /root/.cargo "$HOME/.cargo"
+        fi
+
+    - name: Install latest stable Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+
+    - name: Check Skia metadata and Rust formatting
+      if: matrix.os == 'Linux'
       run: |
+        git -C skia-bindings/skia fetch --tags
         just check-skia-submodule-tag
-    - name: Install Rust
-      run: |
-        rustup update stable
-        rustup default stable 
-        rustup component add rustfmt
-    - run: |
         cargo fmt -- --check
 
+    - name: Prepare macOS build tools
+      if: matrix.os == 'macOS'
+      run: |
+        command -v ninja >/dev/null || brew install ninja
+        echo "CC=$(xcrun --find clang)" >> "$GITHUB_ENV"
+        echo "CXX=$(xcrun --find clang++)" >> "$GITHUB_ENV"
+
+    - name: Prepare Windows build tools
+      if: matrix.os == 'Windows'
+      run: |
+        choco upgrade llvm -y
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        choco install ninja -y
+
+    - name: Get build cache inputs
+      id: cache-inputs
+      shell: bash
+      run: |
+        cargo generate-lockfile
+        echo "rust=$(rustc --version | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
+        echo "skia=$(git rev-parse HEAD:skia-bindings/skia)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache build outputs
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: smoke-${{ runner.os }}-${{ runner.arch }}-${{ steps.cache-inputs.outputs.rust }}-${{ steps.cache-inputs.outputs.skia }}-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'skia-safe/Cargo.toml', 'skia-bindings/Cargo.toml', 'skia-bindings/build.rs', 'skia-bindings/build_support/**', 'skia-bindings/src/**', '.github/workflows/qa.yaml') }}
+
+    - name: Check Freya Skia
+      run: cargo check --locked -p freya-skia-safe --features '${{ matrix.features }}'
+
   audit:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Install just
@@ -43,3 +110,52 @@ jobs:
       uses: EmbarkStudios/cargo-deny-action@v2
       with:
         command: check advisories
+
+  windows-arm-qa:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-11-arm
+    env:
+      SKIA_DEBUG: '0'
+      SKIA_QA_TARGET: aarch64-pc-windows-msvc
+      SKIA_QA_FEATURES: d3d,gl,skottie,svg,textlayout,ureq,vulkan,webp
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+        persist-credentials: false
+
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+        targets: aarch64-pc-windows-msvc
+
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@v2
+      with:
+        version: '22.1.8'
+        force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-woa64.exe
+
+    - name: Install Ninja
+      run: choco install ninja -y
+
+    - name: Build Freya Skia
+      run: cargo build -p freya-skia-safe --release --features "$SKIA_QA_FEATURES" --target "$SKIA_QA_TARGET"
+
+    - name: Run Clippy
+      run: cargo clippy --release --features "$SKIA_QA_FEATURES" --all-targets --target "$SKIA_QA_TARGET" -- -D warnings
+
+    - name: Test workspace
+      run: cargo test --workspace --release --features "$SKIA_QA_FEATURES" --all-targets --target "$SKIA_QA_TARGET" -- --nocapture
+
+    - name: Generate CPU and SVG images
+      run: cargo run -p skia-org --release --features "$SKIA_QA_FEATURES" --target "$SKIA_QA_TARGET" -- qa-images --driver cpu --driver svg
+
+    - name: Upload images
+      uses: actions/upload-artifact@v4.6.0
+      with:
+        name: skia-org-images-${{ env.SKIA_QA_TARGET }}
+        path: qa-images
+        if-no-files-found: error

@@ -12,20 +12,25 @@ set -euo pipefail
 
 previous="${1:?previous version is required}"
 commit="${2:?release commit is required}"
-formats="${3:-svg pdf}"
+formats="${3:-svg}"
 report="${4:-/tmp/rust-skia-release-vector}"
 # Space-separated list of "workflow:artifact" pairs, one per platform that
 # generates QA artifacts. Override to check a subset.
-platforms="${5:-linux-qa.yaml:skia-org-images-x86_64-unknown-linux-gnu macos-qa.yaml:skia-org-images-aarch64-apple-darwin windows-qa.yaml:skia-org-images-x86_64-pc-windows-msvc windows-arm-qa.yaml:skia-org-images-aarch64-pc-windows-msvc}"
+platforms="${5:-qa.yaml:skia-org-images-aarch64-pc-windows-msvc}"
 # Space-separated list of "workflow:run" pairs to pin the run used for a
 # workflow. Omit to auto-select the most recent successful run at each commit.
 runs="${6:-}"
-repo="rust-skia/rust-skia"
+repo="freya-rs/rust-skia"
 
 command -v magick >/dev/null || { echo "ImageMagick is required" >&2; exit 2; }
 command -v gh >/dev/null || { echo "GitHub CLI is required" >&2; exit 2; }
-command -v rsvg-convert >/dev/null || { echo "librsvg (rsvg-convert) is required for SVG comparison" >&2; exit 2; }
-command -v gs >/dev/null || { echo "Ghostscript (gs) is required for PDF comparison" >&2; exit 2; }
+for format in $formats; do
+    case "$format" in
+        svg) command -v rsvg-convert >/dev/null || { echo "librsvg (rsvg-convert) is required for SVG comparison" >&2; exit 2; } ;;
+        pdf) command -v gs >/dev/null || { echo "Ghostscript (gs) is required for PDF comparison" >&2; exit 2; } ;;
+        *) echo "Unknown vector format: $format" >&2; exit 2 ;;
+    esac
+done
 [[ ! -e "$report" || -z "$(find "$report" -mindepth 1 -print -quit)" ]] || {
     echo "Report directory must be new or empty: $report" >&2
     exit 2
