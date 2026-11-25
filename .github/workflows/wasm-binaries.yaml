@@ -93,7 +93,7 @@ jobs:
       if: true
       uses: pragmatrix/release-action@v1.11.1-rs
       with:
-        owner: marc2332
+        owner: '${{ github.repository_owner }}'
         repo: rust-skia
         allowUpdates: true
         replacesArtifacts: true
