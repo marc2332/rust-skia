@@ -63,7 +63,7 @@ jobs:
             macosxDeploymentTarget: '10.14'
           - features: 'ganesh,gl,metal,svg,textlayout,webp'
             macosxDeploymentTarget: '10.14'
-    runs-on: macos-15
+    runs-on: blacksmith-6vcpu-macos-15
     env:
       SKIA_DEBUG: 0
       MACOSX_DEPLOYMENT_TARGET: '${{ matrix.macosxDeploymentTarget }}'
@@ -128,7 +128,7 @@ jobs:
       if: true
       uses: pragmatrix/release-action@v1.11.1-rs
       with:
-        owner: marc2332
+        owner: '${{ github.repository_owner }}'
         repo: rust-skia
         allowUpdates: true
         replacesArtifacts: true

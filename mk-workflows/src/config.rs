@@ -154,62 +154,6 @@ fn freya_binaries_features(workflow: &Workflow) -> Vec<Features> {
     }
 }
 
-/// Specific binary releases for the Vizia GUI library <https://github.com/vizia/vizia>
-/// <https://github.com/rust-skia/rust-skia/discussions/961#discussioncomment-10485430>
-fn vizia_binaries_features(workflow: &Workflow) -> Vec<Features> {
-    match workflow.host_os {
-        HostOS::MacOS => {
-            vec!["ganesh,gl,vulkan,textlayout,svg".into()]
-        }
-        HostOS::Windows => {
-            vec!["ganesh,gl,vulkan,textlayout,svg,d3d".into()]
-        }
-        HostOS::WindowsArm | HostOS::Wasm | HostOS::Android => {
-            vec![]
-        }
-        HostOS::Linux => {
-            // vec![release_job("gl,vulkan,textlayout,svg,wayland,x11")]
-            // Alternative: Use the full feature set `gl,vulkan,textlayout,svg,wayland,x11,webp`
-            vec![]
-        }
-    }
-}
-
-// Binaries for Skia Canvas: <https://github.com/samizdatco/skia-canvas>
-// <https://github.com/rust-skia/rust-skia/pull/1068#issuecomment-2518894492>
-fn skia_canvas_binaries_features(workflow: &Workflow) -> Vec<Features> {
-    match workflow.host_os {
-        HostOS::MacOS => {
-            vec![
-                "textlayout,webp,svg".into(),
-                "ganesh,metal,textlayout,webp,svg".into(),
-            ]
-        }
-        HostOS::Windows => {
-            vec!["ganesh,vulkan,textlayout,webp,svg".into()]
-        }
-        HostOS::WindowsArm => {
-            vec!["ganesh,vulkan,textlayout,webp,svg".into()]
-        }
-        HostOS::Linux => {
-            vec!["ganesh,vulkan,textlayout,webp,svg".into()]
-        }
-        HostOS::Wasm | HostOS::Android => {
-            vec![]
-        }
-    }
-}
-
-// <https://github.com/rust-skia/rust-skia/issues/1205>
-fn grida_canvas_binaries_features(workflow: &Workflow) -> Vec<Features> {
-    match workflow.host_os {
-        HostOS::Wasm => {
-            vec!["gl,textlayout,svg,webp".into()]
-        }
-        _ => Vec::new(),
-    }
-}
-
 fn windows_targets() -> Vec<TargetConf> {
     [TargetConf::new("x86_64-pc-windows-msvc", "d3d")].into()
 }

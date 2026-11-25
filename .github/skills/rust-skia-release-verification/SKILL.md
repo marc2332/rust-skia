@@ -20,24 +20,13 @@ release.
    workflows/assets, verifies binary-download and source-build packaging, and
    dry-runs `skia-svg-macros` packaging when that crate changed. Its output ends
    with a `Summary:` block that lists every check that passed.
-2. Run `just release-verify-images <previous-version> <commit>` and inspect every
-   reported difference. This compares the CPU-rendered PNGs across every
-   platform that produces QA artifacts (linux, macos, windows, windows-arm).
-   The candidate comes from the `master` QA run at the exact release commit,
-   because pushing `release` triggers binary workflows but not QA workflows.
-   Read `/tmp/rust-skia-release-images/comparison/summary.tsv` and inspect its
-   `review` directory. Exit status 0 is an exact match, 1 means differences
-   require review, and 2 means the check could not run. Added, removed, resized,
-   blank, corrupt, clipped, missing-text, wrong-color, and unexplained pixel
-   changes block publication.
-3. Run `just release-verify-vector <previous-version> <commit>` and inspect the
-   reported SVG/PDF differences (advisory). This rasterizes the `svg/` and
-   `pdf/` trees with third-party tools (`rsvg-convert`, Ghostscript) that are
-   not Skia, so a difference only indicates the vector content changed as seen
-   through a foreign renderer. Read
-   `/tmp/rust-skia-release-vector/comparison/summary.tsv` and inspect its
-   `review` directory.
-4. Write the release notes. The maintainer does not write them, so unless the
+2. QA no longer produces image artifacts. If both commits have separately
+   generated artifacts, run `just release-verify-images <previous-version> <commit> <platforms>`.
+   Inspect the summary and review images in `/tmp/rust-skia-release-images/comparison/`.
+   Unexplained CPU image changes block publication. Optionally run
+   `just release-verify-vector <previous-version> <commit> <platforms>` for an advisory SVG comparison.
+   If there are no artifacts, record that image comparison was not run.
+3. Write the release notes. The maintainer does not write them, so unless the
    user names an existing notes file, draft
    `$TMPDIR/rust-skia-<version>-notes.md` from the PRs merged since the
    previous tag, following the release notes rules. The intro paragraph states
@@ -50,17 +39,15 @@ release.
    ```
 
    Validate the finished notes against the release notes rules.
-5. Report the verified version, previous version, exact commit, notes file,
+4. Report the verified version, previous version, exact commit, notes file,
    canonical remote, and image-review result.
 
 ## Options
 
-- To compare only one vector format, pass it as the third argument:
-  `just release-verify-vector <previous> <commit> svg` (or `pdf`).
-- To check a subset of platforms, pass a space-separated list of
-  `workflow:artifact` pairs as the `platforms` argument to either recipe.
-- To pin the run used for a workflow instead of auto-selecting the most recent
-  successful run at each commit, pass a space-separated list of `workflow:run`
+- Pass a quoted list of `workflow:artifact` pairs as `platforms` to either recipe.
+- To compare PDF instead of SVG, pass `pdf` after `platforms` in the vector recipe.
+- To pin the run instead of selecting the latest completed run with the artifact,
+  pass a space-separated list of `workflow:run`
   pairs as the `runs` argument to either recipe. This is useful when a commit
   has multiple successful runs and you want a specific one.
 
