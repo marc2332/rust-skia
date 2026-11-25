@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   linux-local-build:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     container: ghcr.io/marc2332/rust-skia-linux:latest
 
     steps:
@@ -43,7 +43,7 @@ jobs:
         just test-local-build
 
   linux-wasm:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     container: ghcr.io/marc2332/rust-skia-linux:latest
     env:
       EMCC_CFLAGS: "-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2"
@@ -89,7 +89,7 @@ jobs:
   #       cargo build -vv --features "gl"
 
   windows-link-dead-code-gpu-textlayout:
-    runs-on: windows-2022
+    runs-on: blacksmith-4vcpu-windows-2025
 
     steps:
     - name: Attempt to fix git dubious ownership warnings
@@ -122,7 +122,7 @@ jobs:
         RUSTFLAGS: '-Clink-dead-code'
 
   windows-link-dead-code:
-    runs-on: windows-2022
+    runs-on: blacksmith-4vcpu-windows-2025
 
     steps:
     - uses: actions/checkout@v3
@@ -155,7 +155,7 @@ jobs:
         RUSTFLAGS: '-Clink-dead-code'
 
   windows-x86:
-    runs-on: windows-2022
+    runs-on: blacksmith-4vcpu-windows-2025
 
     steps:
     - uses: actions/checkout@v3
@@ -186,7 +186,7 @@ jobs:
         cargo build --features gl,vulkan,d3d,textlayout,webp --target i686-pc-windows-msvc
 
   windows-skia-safe-no-default-features:
-    runs-on: windows-2022
+    runs-on: blacksmith-4vcpu-windows-2025
 
     steps:
     - uses: actions/checkout@v3
@@ -221,7 +221,7 @@ jobs:
         RUSTFLAGS: '-Dwarnings'
 
   linux-beta:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     container: ghcr.io/marc2332/rust-skia-linux:latest
 
     steps:
@@ -247,7 +247,7 @@ jobs:
         cargo build --features gl,egl,vulkan,x11,wayland,textlayout,svg,webp
 
   linux-msrv:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     container: ghcr.io/marc2332/rust-skia-linux:latest
 
     steps:
