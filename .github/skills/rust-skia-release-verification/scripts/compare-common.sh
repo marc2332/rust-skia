@@ -37,10 +37,6 @@ resolve_run() {
         fi
     fi
 
-    if [[ "$workflow:$artifact" == qa.yaml:skia-org-images-aarch64-pc-windows-msvc ]] &&
-        git cat-file -e "$sha:.github/workflows/windows-arm-qa.yaml"; then
-        workflow=windows-arm-qa.yaml
-    fi
     find_run "$sha" "$workflow" "$artifact"
 }
 

@@ -32,6 +32,9 @@ jobs:
           - os: Windows
             runner: blacksmith-4vcpu-windows-2025
             features: gl,svg,textlayout,vulkan,webp
+          - os: Windows ARM64
+            runner: windows-11-arm
+            features: d3d,svg,textlayout,webp
     runs-on: ${{ matrix.runner }}
     container: ${{ matrix.container }}
     env:
@@ -77,6 +80,17 @@ jobs:
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         choco install ninja -y
 
+    - name: Install Windows ARM64 LLVM and Clang
+      if: matrix.os == 'Windows ARM64'
+      uses: KyleMayes/install-llvm-action@v2
+      with:
+        version: '22.1.8'
+        force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-woa64.exe
+
+    - name: Install Windows ARM64 Ninja
+      if: matrix.os == 'Windows ARM64'
+      run: choco install ninja -y
+
     - name: Get build cache inputs
       id: cache-inputs
       shell: bash
@@ -110,52 +124,3 @@ jobs:
       uses: EmbarkStudios/cargo-deny-action@v2
       with:
         command: check advisories
-
-  windows-arm-qa:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: windows-11-arm
-    env:
-      SKIA_DEBUG: '0'
-      SKIA_QA_TARGET: aarch64-pc-windows-msvc
-      SKIA_QA_FEATURES: d3d,gl,skottie,svg,textlayout,ureq,vulkan,webp
-    defaults:
-      run:
-        shell: bash
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-        persist-credentials: false
-
-    - uses: dtolnay/rust-toolchain@stable
-      with:
-        components: clippy
-        targets: aarch64-pc-windows-msvc
-
-    - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v2
-      with:
-        version: '22.1.8'
-        force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-woa64.exe
-
-    - name: Install Ninja
-      run: choco install ninja -y
-
-    - name: Build Freya Skia
-      run: cargo build -p freya-skia-safe --release --features "$SKIA_QA_FEATURES" --target "$SKIA_QA_TARGET"
-
-    - name: Run Clippy
-      run: cargo clippy --release --features "$SKIA_QA_FEATURES" --all-targets --target "$SKIA_QA_TARGET" -- -D warnings
-
-    - name: Test workspace
-      run: cargo test --workspace --release --features "$SKIA_QA_FEATURES" --all-targets --target "$SKIA_QA_TARGET" -- --nocapture
-
-    - name: Generate CPU and SVG images
-      run: cargo run -p skia-org --release --features "$SKIA_QA_FEATURES" --target "$SKIA_QA_TARGET" -- qa-images --driver cpu --driver svg
-
-    - name: Upload images
-      uses: actions/upload-artifact@v4.6.0
-      with:
-        name: skia-org-images-${{ env.SKIA_QA_TARGET }}
-        path: qa-images
-        if-no-files-found: error

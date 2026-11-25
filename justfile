@@ -1,6 +1,3 @@
-# Platforms that produce QA artifacts, as "workflow:artifact" pairs.
-qa_platforms := "qa.yaml:skia-org-images-aarch64-pc-windows-msvc"
-
 # Features of the documentation built on macOS.
 doc_features_mac := "gl,vulkan,metal,textlayout,svg,skottie,ureq,webp"
 
@@ -56,15 +53,13 @@ audit-skia-deps:
 release-verify version previous commit remote="upstream":
     bash .github/scripts/release.sh verify "{{ version }}" "{{ previous }}" "{{ commit }}" "{{ remote }}"
 
-# Download matching QA artifacts and compare all generated images across every
-# platform that produces QA artifacts.
-release-verify-images previous commit report="/tmp/rust-skia-release-images" platforms="" runs="":
-    bash .github/skills/rust-skia-release-verification/scripts/compare-images.sh "{{ previous }}" "{{ commit }}" "{{ report }}" "{{ if platforms == "" { qa_platforms } else { platforms } }}" "{{ runs }}"
+# Compare CPU images from explicitly selected workflow:artifact pairs.
+release-verify-images previous commit platforms report="/tmp/rust-skia-release-images" runs="":
+    bash .github/skills/rust-skia-release-verification/scripts/compare-images.sh "{{ previous }}" "{{ commit }}" "{{ report }}" "{{ platforms }}" "{{ runs }}"
 
-# Advisory comparison of vector outputs between two commits, across
-# every platform that produces QA artifacts.
-release-verify-vector previous commit formats="svg" report="/tmp/rust-skia-release-vector" platforms="" runs="":
-    bash .github/skills/rust-skia-release-verification/scripts/compare-vector.sh "{{ previous }}" "{{ commit }}" "{{ formats }}" "{{ report }}" "{{ if platforms == "" { qa_platforms } else { platforms } }}" "{{ runs }}"
+# Compare vector images from explicitly selected workflow:artifact pairs.
+release-verify-vector previous commit platforms formats="svg" report="/tmp/rust-skia-release-vector" runs="":
+    bash .github/skills/rust-skia-release-verification/scripts/compare-vector.sh "{{ previous }}" "{{ commit }}" "{{ formats }}" "{{ report }}" "{{ platforms }}" "{{ runs }}"
 
 # Publish required crates in dependency order, verify them, and run smoke tests.
 release-publish-crates version previous:

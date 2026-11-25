@@ -14,9 +14,7 @@ previous="${1:?previous version is required}"
 commit="${2:?release commit is required}"
 formats="${3:-svg}"
 report="${4:-/tmp/rust-skia-release-vector}"
-# Space-separated list of "workflow:artifact" pairs, one per platform that
-# generates QA artifacts. Override to check a subset.
-platforms="${5:-qa.yaml:skia-org-images-aarch64-pc-windows-msvc}"
+platforms="${5:?provide workflow:artifact pairs to compare}"
 # Space-separated list of "workflow:run" pairs to pin the run used for a
 # workflow. Omit to auto-select the most recent successful run at each commit.
 runs="${6:-}"

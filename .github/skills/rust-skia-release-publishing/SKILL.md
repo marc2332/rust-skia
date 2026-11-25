@@ -11,7 +11,7 @@ operation through the publishing recipes in the repository `justfile`.
 
 Before publishing, require the completed verification result: release version,
 previous version, exact release commit, notes file, canonical remote, and image
-review result. Confirm that these values still describe local `HEAD`, remote
+review status (including when no image artifacts were available). Confirm that these values still describe local `HEAD`, remote
 `master` and `release`, binary artifacts, and the intended final tag. If the
 result is missing, stale, or mismatched, stop and invoke the
 `rust-skia-release-verification` skill.
